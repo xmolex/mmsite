@@ -1,0 +1,10 @@
+scripts/download/
+tmp/
+logs/
+users/tmp/
+data/files/
+data/files_img/
+data/files_sources/
+data/photos/
+data/posters/
+data/shots/

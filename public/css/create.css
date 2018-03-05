@@ -1,0 +1,20 @@
+.select-active-elem {display: inline-block; padding: 5px; border: 1px solid #ccc; border-radius: 5px; color: #555;}
+#data-genres-body, #data-countries-body {margin-top: 2px;}
+#form-year, #form-allow-age {width: 15%; min-width: 100px; display: inline-block;}
+
+/* template */
+.tmpl-modal-image {display: inline-block; padding: 5px; cursor: pointer;}
+.tmpl-modal-image button {position: relative; left: -15px;}
+.tmpl-modal-image img {width: 100px; float:left;}
+
+.tmpl-modal-file {display: inline-block; padding: 5px; cursor: pointer;}
+
+.tmpl-data-img {display: inline-block; padding: 5px;}
+.tmpl-data-img button {position: relative; left: -15px;}
+.tmpl-data-img img {width: 100px; float:left;}
+
+.tmpl-data-files {background: whitesmoke; margin: 10px; padding: 10px; float: left; width: 70%;}
+
+.tmpl-data-subtitles {padding: 5px; margin: 10px; border-radius: 8px; box-shadow: 0px 5px 8px rgba(0,0,0,.1); float: left; background-color: white;}
+.tmpl-data-subtitles div {text-align: center;}
+.tmpl-data-subtitles input {margin: 0px auto; width: 90%;}

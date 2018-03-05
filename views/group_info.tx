@@ -1,0 +1,94 @@
+<div class="group-detail">
+  <div class="group-poster">
+    : if ( $allow_age != -1 ) {
+        <div class="age-allow age-allow-<: $allow_age :>"></div>
+    : }
+    <img src="<: $poster_url :>" title="<: $poster_title :>" alt="poster" class="img-rounded">
+  </div>
+
+<div style="display: inline: block;">
+<h2><: $title :>
+    : if ( $user_role > 1 ) {
+        <a href="/edit/<: $id :>"><span class="glyphicon glyphicon-pencil"></span></a>
+    : }
+</h2>
+
+: if $title_orig {
+<div><em><: $title_orig :></em></div>
+: }
+
+: if $is_serial {
+<div>
+  <strong>Многосерийный</strong>
+</div>
+: }
+
+: if $year {
+<div>
+  <strong>Год:</strong>
+  <span><: $year :></span>
+</div>
+: }
+
+: if $genres {
+<div>
+  <strong>Жанр:</strong>
+  <span><: $genres :></span>
+</div>
+: }
+
+: if $countries {
+<div>
+  <strong>Страна:</strong>
+  <span><: $countries :></span>
+</div>
+: }
+
+<div style="padding: 5px 0px;"><: $description :></div>
+
+: if $allow_show {
+    <h4>
+        <a href="/gfiles/<: $id :>">Смотреть / скачать</a>
+    </h4>
+: }
+</div>
+
+<div style="clear: both;"></div>
+</div>
+
+: if $trailers {
+<div id="trailers">
+    <script type="text/javascript" src="/jwplayer/js/init.js"></script>
+    <h3>Трейлеры</h3>
+    : for $trailers -> $trailer {
+    <div id="trailer-body-<: $trailer.id:>"></div>
+    <script type="text/javascript">
+      jwplayer("trailer-body-<: $trailer.id:>").setup({
+          file: '<: $trailer.url :>',
+          image: '<: $trailer.image :>',
+          width: '<: $trailer.res_x :>',
+          height: '<: $trailer.res_y :>'
+      });
+      jwplayer().play(false);
+    </script>
+    : }
+</div>
+: }
+
+: if $shots {
+<div id="shots">
+    <h3>Кадры</h3>
+    : for $shots -> $shot {
+        <a href="<: $shot.url_orig :>"><img style="width: 200px;" src="<: $shot.url :>" title="<: $shot.title :>" alt="shot" class="img-thumbnail"></a>
+    : }
+</div>
+: }
+
+
+
+
+
+
+
+
+

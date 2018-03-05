@@ -1,0 +1,179 @@
+<div class="row">
+  <div class="col-md-10" role="main" >
+      <div id="group-anonce-body">
+      : if $anonces {
+          : for $html_anonces -> $html {
+            <: $html :>
+          : }
+      : }
+      </div>
+      <span class="ajxloader" id="loader9"></span>
+  </div>
+            
+  <div class="col-md-2 bs-sidenav">
+    <ul class="nav">
+    : if ( $user_role > 1 ) {
+        <li><a href="/create"><span class="glyphicon glyphicon-plus"></span> Добавить</a></li>
+    : }
+        <li id="meny-genre-0"><a href="/">Все</a></li>
+    : for $meny -> $elem {
+        <li id="meny-genre-<: $elem.id :>"><a href="/?genre=<: $elem.id :>" onclick="filter_modify( 'genre', <: $elem.id :> ); return false;"><: $elem.title :></a></li>
+    : }
+    </ul>
+  </div>
+            
+</div>
+
+<script>
+var genre_id = '<: $genre :>';
+if (!genre_id) {genre_id = 0;}
+$(document).ready(function() {
+  $("#meny-genre-"+genre_id).css("background-color","#eee");
+});
+</script>
+
+<script>
+var filter_text;
+var filter_year;
+var filter_genre = genre_id;
+var filter_country;
+var filter_serial;
+var filter_page = 1;
+var filter_token = generate_token(40);
+var stop_load_by_scroll = 0;
+
+
+function filter_modify( type, value ) {
+    if (type == 'text') {
+        if ( filter_text == $("#stext").val() ) { return; }
+        filter_text = $("#stext").val();
+    }
+    
+    if (type == 'genre') {
+        if ( filter_genre == value ) { return; }
+        $("#meny-genre-"+filter_genre).css("background-color","#fff");
+        filter_genre = value;
+        $("#meny-genre-"+filter_genre).css("background-color","#eee");
+    }
+    
+    // ищем
+    get_search();
+}
+
+
+// функция поиска
+function search() {
+    // loading open
+    $("#loader9").css('display','inline-block');
+
+    // отправляем
+    $.ajax({
+        type: 'POST',
+        data: ({ "token" : filter_token, "page" : filter_page, "text" : filter_text, "year" : filter_year, "genre" : filter_genre, "country" : filter_country, "serial" : filter_serial }),
+        async: true,
+        url: '/search',
+        success: function (data, textStatus) {
+            $("#loader9").css('display','none'); // loading close
+        
+            var data = JSON.parse(data);
+            if (data.error) {
+                alert(data.error);
+                return false;
+            }
+            
+            if ( data.result !== undefined ) {
+                // получили html
+                $("#group-anonce-body").append(data.result);
+                
+                // если ничего не получили, значит достигли конца
+                if (data.result == '') {stop_load_by_scroll = 1;}
+                
+                return;
+            }
+        },
+        error: function (jqXHR, exception) {
+           $("#loader9").css('display','none'); // loading close
+           var mess = ajax_fail(jqXHR, exception);
+           alert(mess);
+        }
+        
+   });
+}
+
+var timer;
+$("#stext").keyup(function () {
+    window.clearTimeout(timer);
+        timer = setTimeout(function () {
+            filter_modify( 'text', 0 );
+        }, 1000);
+});
+
+$(document).ready(function(){
+    var need_search = 0;
+
+    var param = getHashParams();
+    if ( param.text    !== undefined ) { filter_text    = param.text;    need_search = 1; $("#stext").val(param.text); }
+    if ( param.year    !== undefined ) { filter_year    = param.year;    need_search = 1; }
+    if ( param.genre   !== undefined ) {
+        filter_genre = param.genre;
+        need_search = 1;
+        $("#meny-genre-"+genre_id).css("background-color","#fff");
+        $("#meny-genre-"+filter_genre).css("background-color","#eee");
+    }
+    if ( param.country !== undefined ) { filter_country = param.country; need_search = 1; }
+    if ( param.serial  !== undefined ) { filter_serial  = param.serial;  need_search = 1; }
+
+    if (need_search) {
+        get_search();
+    }
+});
+
+// предварительные данные перед поиском
+function get_search() {
+    // создаем токен
+    filter_token = generate_token(40);
+    
+    // чистим поле для вывода
+    $("#group-anonce-body").html('');
+    
+    // обнуляем страницу
+    filter_page = 1;
+    
+    // сбрасываем стопор подгрузки по скроллу
+    stop_load_by_scroll = 0;
+    
+    // ищем
+    search();
+}
+
+
+
+
+
+var loading = false;
+$(window).scroll(function(){
+    if (! stop_load_by_scroll) {
+	      if( ( ( $(window).scrollTop() + $(window).height() ) + 250 ) >= $(document).height() ) {
+	          if( loading == false ){
+			          loading = true;
+			          filter_page++;
+			          search();
+		            loading = false;
+	 	        }
+	      }
+	}
+});
+
+
+
+
+
+</script>
+
+
+
+
+
+
+
+

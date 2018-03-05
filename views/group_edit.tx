@@ -1,0 +1,353 @@
+<link rel="stylesheet" href="/css/create.css">
+<script src="/js/jquery.damnUploader.min.js"></script>
+<script src="/js/uploader-setup.js"></script>
+<script>var TextCancel = 'отменено'; var TextSucess = 'загружено'; var TextError = 'ошибка';</script>
+<script>
+var genres_json     = '<: $genres_json :>';     
+var countries_json  = '<: $countries_json :>';
+var translates_json = '<: $translates_json :>';
+var allow_age_json  = '<: $allow_age_json :>';
+var data_json       = '<: $data_json :>';
+</script>
+
+
+<div id="myModalBox" class="modal fade">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+        <h4 class="modal-title">Выберите файлы</h4>
+      </div>
+      <div class="modal-body">
+          <div id="myModalBoxProcessBody" style="margin-bottom: 10px;"></div>
+          <span class="ajxloader" id="loader1"></span>
+          <span id="myModalBoxProcessBodyStatus"></span>
+          <div style="margin-top: 10px;"><button type="button" class="btn btn-primary" onclick="modal_select_go('loader1')">Выбрать</button></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Закрыть</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="myModalBoxSetConv" class="modal fade">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+        <h4 class="modal-title">Настройки кодирования</h4>
+      </div>
+      <div class="modal-body" id="myModalBoxSetConvBody"></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Закрыть</button>
+      </div>
+    </div>
+  </div>
+</div>
+ 
+ 
+ 
+<h1><a href="/groups/<: $id :>"><span class="glyphicon glyphicon-arrow-left"></span></a> Редактирование</h1>
+
+<h4>Загрузите файлы</h4>
+<div>
+        <form class="form-inline" role="form" id="upload-form" method="post" action="/upload" enctype="multipart/form-data">
+            <div class="tab-content" style="margin-top: 10px;">
+                <div class="tab-pane active" id="filesystem-tab">
+                    <div class="well well-lg auto-tip" id="drop-box" title="перетащите сюда файлы" data-placement="bottom">
+                            <div class="form-group">
+                                <input type="file" class="form-control auto-tip" id="file-input" name="file" title="выберите файлы для загрузки" />
+                            </div>
+                            <button id="clear-btn" class="btn btn-danger btn-std pull-right">Сброс</button>
+                    </div>
+                </div>
+            </div>
+        </form>
+       <table class="table">
+           <tbody id="upload-rows"></tbody>
+       </table>
+</div>
+
+<h4>Информация</h4>
+
+<form class="form-horizontal" role="form">
+    
+  <div class="form-group">
+    <label for="form-kinopoisk-id" class="col-sm-3 control-label">Идентификатор на kinopoisk.ru</label>
+    <div class="col-sm-9">
+        <input type="text" name="kinopoisk_id" class="form-control" id="form-kinopoisk-id" placeholder="идентификатор" onchange="save_total_info('kinopoisk_id',this.value)">
+    </div>
+  </div>
+    
+  <div class="form-group">
+    <label for="form-title" class="col-sm-3 control-label">Название</label>
+    <div class="col-sm-9">
+      <input type="text" name="title" class="form-control" id="form-title" placeholder="Название" onchange="save_total_info('title',this.value)">
+    </div>
+  </div>
+    
+  <div class="form-group">
+    <label for="form-title-orig" class="col-sm-3 control-label">Оригинальное название</label>
+    <div class="col-sm-9">
+      <input type="text" name="title_orig" class="form-control" id="form-title-orig" placeholder="оригинальное название" onchange="save_total_info('title_orig',this.value)">
+    </div>
+  </div>
+  
+  <div class="form-group">
+    <label for="form-is-serial" class="col-sm-3 control-label">Многосерийный</label>
+    <div class="col-sm-9">
+      <select name="is_serial" class="form-control" id="form-is-serial" style="width: 15%; min-width: 100px; display: inline-block;" onchange="save_total_info('is_serial',this.value)">
+          <option value="0">Нет</option>
+          <option value="1">Да</option>
+      </select>
+    </div>
+  </div>
+  
+  <div class="form-group">
+    <label for="form-year" class="col-sm-3 control-label">Год</label>
+    <div class="col-sm-9">
+      <select name="year" class="form-control" id="form-year" onchange="save_total_info('year',this.value)">
+          <option value="0">Не указано</option>
+          : for $years -> $year {
+              <option value="<: $year.id :>"><: $year.title :></option>
+          : }
+      </select>
+    </div>
+  </div>
+  
+  <div class="form-group">
+    <label for="form-allow-age" class="col-sm-3 control-label">Разрешенный возраст просмотра</label>
+    <div class="col-sm-9">
+      <select name="allow_age" class="form-control" id="form-allow-age" onchange="save_total_info('allow_age',this.value)">
+          <option value="-1">Не указано</option>
+          : for $allow_ages -> $age {
+              <option value="<: $age.id :>"><: $age.title :></option>
+          : }
+      </select>
+    </div>
+  </div>
+    
+  <div class="form-group">
+    <label for="form-genres" class="col-sm-3 control-label">Жанр</label>
+    <div class="col-sm-9">
+      <input type="text" name="genres" class="form-control" id="form-genres" list="data-genres" placeholder="Начните вводить жанр">
+      <datalist id="data-genres">
+          : for $genres -> $genre {
+              <option value="<: $genre.title :>"></option>
+          : }
+      </datalist>
+      <div id="data-genres-body"></div>
+    </div>
+  </div>
+  
+  <script>
+    $("#form-genres").on('change keyup input',
+       function(){ info_create( 'genres', $(this).val() ); }
+    );
+  </script>
+  
+  <div class="form-group">
+    <label for="form-countries" class="col-sm-3 control-label">Страна</label>
+    <div class="col-sm-9">
+      <input type="text" name="countries" class="form-control" id="form-countries" list="data-countries" placeholder="Начните вводить страну">
+      <datalist id="data-countries">
+          : for $countries -> $country {
+              <option value="<: $country.title :>"></option>
+          : }
+      </datalist>
+      <div id="data-countries-body"></div>
+    </div>
+  </div>
+  
+  <script>
+    $("#form-countries").on('change keyup input',
+       function(){ info_create( 'countries', $(this).val() ); }
+    );
+  </script>
+    
+  <div class="form-group">
+    <label for="form-description" class="col-sm-3 control-label">Описание</label>
+    <div class="col-sm-9">
+      <textarea name="description" class="form-control" id="form-description" onchange="save_total_info('description',this.value)"></textarea>
+    </div>
+  </div>
+    
+</form>
+
+<div>
+    <h4>Постеры <a href="" onclick="modal_choose_files('posters',''); return false"><span class="glyphicon glyphicon glyphicon-plus"></span></a></h4>
+    <div id="posters-data"></div>
+    <div class="clearfix"></div>
+</div>
+
+<div>
+    <h4>
+      Кадры 
+      <a href="" onclick="modal_choose_files('shots',''); return false">
+      <span class="glyphicon glyphicon glyphicon-plus"></span></a>  
+      <a href="" onclick="modal_create_shots(<: $id :>, 'loader2'); return false"><span class="glyphicon glyphicon-camera" title="создать автоматически"></span></a>
+      <span class="ajxloader" id="loader2"></span>
+    </h4>
+    <div id="shots-data"></div>
+    <div class="clearfix"></div>
+</div>
+
+<div>
+    <h4>Файлы <a href="" onclick="modal_choose_files('files',''); return false"><span class="glyphicon glyphicon glyphicon-plus"></span></a></h4>
+    <div id="files-data"></div>
+    <div class="clearfix"></div>
+</div>
+
+<div style="margin: 10px 0px;">
+    <button id="clear-btn" class="btn btn-danger btn-std" onclick="delete_group(); return false">Удалить</button>
+</div>
+
+
+
+
+<script type="html/tpl" id="TmplModalImage">
+<span id="popup-images-%ID%" onclick="modal_select('%ID%')" class="tmpl-modal-image">
+    <button type="button" class="close" onclick="users_file_delete('%ID%')">&times;</button>
+    <img class="img-thumbnail" src="%URL%">
+</span>
+</script>
+<script type="html/tpl" id="TmplModalFile">
+<div id="popup-files-%ID%" onclick="modal_select('%ID%')" class="tmpl-modal-file">
+    %NAME% (%SIZE%)
+    <button type="button" class="close" onclick="users_file_delete('%ID%')">&times;</button>
+</div>
+<div class="clearfix"></div>
+</script>
+
+<script type="html/tpl" id="TmplDataPosters">
+<span id="posters-file-body-%ID%" class="tmpl-data-img">
+    <button type="button" class="close" onclick="delete_all_inb_files('%ID%','posters')">&times;</button>
+    <img class="img-thumbnail" src="%URL%">
+</span>
+</script>
+<script type="html/tpl" id="TmplDataShots">
+<span id="shots-file-body-%ID%" class="tmpl-data-img">
+    <button type="button" class="close" onclick="delete_all_inb_files('%ID%','shots')">&times;</button>
+    <img class="img-thumbnail"  src="%URL%">
+</span>
+</script>
+<script type="html/tpl" id="TmplDataFiles">
+<div id="files-file-body-%ID%" style="" class="tmpl-data-files">
+    <button type="button" class="close" onclick="delete_all_inb_files('%ID%','files')">&times;</button>
+    <h5>
+          %NAME% (%SIZE%)
+          <a href="" onclick="get_conv_setting('%ID%'); return false;"><span class="glyphicon glyphicon-edit"></span></a>
+    </h5>
+    <div style="margin: 5px 0px;">
+        <input type="text" name="title" class="form-control" id="form-title-%ID%" placeholder="%NAME%" style="width: 80%; display: inline-block;" onchange="file_form_modify('files','title','%ID%',this.value);" value="%VALUE%">
+        <select name="type" class="form-control" id="form-type-%ID%" style="width: 15%; min-width: 100px; display: inline-block;" onchange="file_form_modify('files','type','%ID%',this.value);">
+          <option value="0">файл</option>
+          <option value="1">трейлер</option>
+        </select>
+    </div>
+    <div>Субтитры: <a href="" onclick="modal_choose_files('subtitles','%ID%'); return false"><span class="glyphicon glyphicon glyphicon-plus"></span></a></div>
+    <div id="files-file-body-subtitles-%ID%"></div>
+</div>
+<div class="clearfix"></div>
+</script>
+<script type="html/tpl" id="TmplDataSubtitle">
+<div id="subtitles-file-body-%ID%-%PARENT_ID%" class="tmpl-data-subtitles">
+  <button type="button" class="close" onclick="delete_all_inb_files('%ID%','subtitles')">&times;</button>
+  <div>
+  %NAME%
+  <input type="text" name="title" class="form-control" id="form-title-%ID%-%PARENT_ID%" placeholder="%NAME%" onchange="file_form_modify('subtitles','title','%ID%',this.value);" value="%VALUE%">
+  </div>
+</div>
+</script>
+
+<script type="html/tpl" id="TmplElemGenres">
+<span id="elem-genres-%ID%" class="select-active-elem">
+    <button type="button" class="close" onclick="info_delete('genres','%ID%')">&times;</button>
+    %TITLE%
+</span>
+</script>
+<script type="html/tpl" id="TmplElemCountries">
+<span id="elem-countries-%ID%" class="select-active-elem">
+    <button type="button" class="close" onclick="info_delete('countries','%ID%')">&times;</button>
+    %TITLE%
+</span>
+</script>
+
+<script type="html/tpl" id="TmplConvSetting">
+          Исходный файл: <b><span id="conv-set-file">нет данных</span></b><br>
+          
+          Автоопределение:<br>
+          <b>Видео:</b>
+          <ul>
+            <li>Дорожка: <span id="conv-set-video-map">нет данных</span></li>
+            <li>Кодек: <span id="conv-set-video-codec">нет данных</span></li>
+            <li>Разрешение: <span id="conv-set-video-resolution">нет данных</span></li>
+            <li>Битрейт: <span id="conv-set-video-bitrate">нет данных</span></li>
+            <li>Продолжительность: <span id="conv-set-video-duration">нет данных</span></li>
+          </ul>
+          
+          <b>Аудио:</b>
+          <ul>
+            <li>Дорожка: <span id="conv-set-audio-map">нет данных</span></li>
+            <li>Кодек: <span id="conv-set-audio-codec">нет данных</span></li>
+          </ul>
+          
+          <b>Настройки кодирования для ffmpeg:</b><br>
+          <p>Статус: <span id="conv-set-conv-status">нет данных</span></p>
+          
+          <form class="form-horizontal" role="form">
+          <div class="form-group">
+            <label for="conv-set-conv-map" class="col-sm-3 control-label">Аудио дорожка</label>
+            <div class="col-sm-9">
+              <select name="conv_map" id="conv-set-conv-map" class="form-control"></select>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="conv-set-conv-b" class="col-sm-3 control-label">Видео битрейт (Kb)</label>
+            <div class="col-sm-9">
+              <input name="conv_b" id="conv-set-conv-b" value="" class="form-control">
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="conv-set-conv-async" class="col-sm-3 control-label">async</label>
+            <div class="col-sm-9">
+              <input name="conv_async" id="conv-set-conv-async" value="" class="form-control">
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="conv-set-conv-af" class="col-sm-3 control-label">af</label>
+            <div class="col-sm-9">
+              <input name="conv_af" id="conv-set-conv-af" value="" class="form-control">
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="conv-set-conv-s" class="col-sm-3 control-label">s</label>
+            <div class="col-sm-9">
+              <input name="conv_s" id="conv-set-conv-s" value="" class="form-control">
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="conv-set-conv-ss" class="col-sm-3 control-label">ss</label>
+            <div class="col-sm-9">
+              <input name="conv_ss" id="conv-set-conv-ss" value="" class="form-control">
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="conv-set-conv-t" class="col-sm-3 control-label">t</label>
+            <div class="col-sm-9">
+              <input name="conv_t" id="conv-set-conv-t" value="" class="form-control">
+            </div>
+          </div>
+          </form>
+          
+          <p style="margin-top: 10px;"><button type="button" class="btn btn-primary" onclick="modal_save_conv_setting()" id="conv-set-apply">Применить</button></p>
+</script>
+
+<script src="/js/edit.js"></script>

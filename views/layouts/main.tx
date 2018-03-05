@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="<: $settings.charset :>">
+    <title><: $title :></title>
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/css/style.css?v1">
+    <script src="/js/jquery-3.2.1.min.js"></script>
+    <script src="/js/bootstrap.min.js"></script>
+    <script src="/js/basic.js?v1"></script>
+  </head>
+<body>
+<div class="container">
+    <div id="header" style="background-color: #f8f8f8; border: 2px solid #d6e0f5; line-height: 3em;">
+        <a style="display: inline-block; padding: 0px 20px; vertical-align: middle; font-size: 1.5em;" href="/"><: $site_name :></a>
+        <div id="auth" style="display: inline-block;vertical-align: middle;padding: 0px 20px; float: right;">
+            : if $user_id {
+               <div><: $user_name :> <a href="/exit?from=<: $from :>">Выход</a></div>
+            : }
+            : if !$user_id {
+               <div><a href="/auth_vk?from=<: $from :>">Войти</a></div>
+            : }
+        </div>
+    </div>
+    <form name="search" id="sform" onsubmit="sformgo(); return false;">
+    <div id="search" class="row">
+        <div class="col-md-10">
+          <input name="stext" value="" placeholder="введите название" class="form-control" id="stext" style="width: 100%;">
+        </div>
+        <div class="col-md-2">
+          <input name="ssubmit" type="submit" value="Найти" class="btn btn-default" id="ssubmit" style="width: 100%;">
+        </div>
+    </div>
+    </form>
+    <div id="body">
+        <: $content :>
+    </div>
+    <div id="footer" style="height: 100px;"></div>
+</div>
+
+
+<: $time :>
+
+<script>
+function sformgo() {
+    document.location.href = '/#text=' + $("#stext").val();
+}
+</script>
+
+</body>
+</html>

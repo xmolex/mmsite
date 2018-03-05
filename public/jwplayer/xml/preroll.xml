@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<VAST version="3.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="vast3_draft.xsd">
+  <Ad id="midroll-1" sequence="1">
+    <InLine>
+      <AdSystem version="2.0">JW Player</AdSystem>
+      <AdTitle>Static Tag</AdTitle>
+      <Error>/jwplayer/elem/pixel.gif?err=[ERRORCODE]</Error>
+      <Impression>/jwplayer/elem/pixel.gif</Impression>
+      <Creatives>
+        <Creative sequence="1">
+          <Linear skipoffset="00:00:03">
+            <Duration>00:00:10</Duration>
+            <TrackingEvents>
+              <Tracking event="start">/jwplayer/elem/pixel.gif</Tracking>
+              <Tracking event="firstQuartile">/jwplayer/elem/pixel.gif</Tracking>
+              <Tracking event="midpoint">/jwplayer/elem/pixel.gif</Tracking>
+              <Tracking event="thirdQuartile">/jwplayer/elem/pixel.gif</Tracking>
+              <Tracking event="complete">/jwplayer/elem/pixel.gif</Tracking>
+              <Tracking event="pause">/jwplayer/elem/pixel.gif</Tracking>
+              <Tracking event="mute">/jwplayer/elem/pixel.gif</Tracking>
+              <Tracking event="fullscreen">/jwplayer/elem/pixel.gif</Tracking>
+            </TrackingEvents>
+            <VideoClicks>
+              <ClickThrough>http://www.jwplayer.com</ClickThrough>
+              <ClickTracking>/jwplayer/elem/pixel.gif</ClickTracking>
+            </VideoClicks>
+            <MediaFiles>
+              <MediaFile id="1" delivery="progressive" type="video/mp4" bitrate="400" width="640" height="360">http://beetex.com/jwplayer-10s.mp4</MediaFile>
+            </MediaFiles>
+          </Linear>
+        </Creative>
+    </Creatives>
+  </InLine>
+</Ad>
+</VAST>

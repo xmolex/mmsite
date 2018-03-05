@@ -1,0 +1,61 @@
+body {
+margin: 0;
+padding: 0;
+}
+
+#search {margin: 10px 0px;}
+#search #stext {width: 80%; display: inline-block;}
+#search #ssubmit {vertical-align: top;}
+
+
+
+/* meny */
+.bs-sidenav .nav>li>a {padding: 4px 20px;}
+
+
+
+#console-tip-anchor {
+    position: fixed;
+    bottom: 0;
+    right:100px;
+    width: 10px;
+}
+
+.btn-std {
+    margin-left: 1em;
+    min-width: 100px;
+}
+
+.highlighted {
+    background-image: none;
+    background-color: honeydew !important;
+}
+
+.progress {
+  background-image: url('/img/progress-bar.gif'); 
+  background-position: -400px 0px;
+}
+
+
+/* preview */
+.gf-anc-one {overflow-y: hidden; display: inline-block; margin: 10px; padding:10px; text-align: center; max-height: 300px; max-width: 200px; vertical-align: top; border-radius: 3px; box-shadow: 0px 0px 0px rgba(0,0,0,.1); cursor: pointer;}
+.gf-anc-one:hover {border-radius: 3px; box-shadow: 0px 5px 8px rgba(0,0,0,.1);}
+.gf-anc-one-img {display:inline-block; vertical-align: top; position: relative;}
+.gf-anc-one-img img {width: 120px;}
+.gf-anc-one-img .serial {position: absolute; top: 10px; left: 10px; width: 20px; height: 40px; background-image: url(/img/serial.png); background-repeat: no-repeat;}
+.gf-anc-one-inb {display:inline-block; vertical-align: top; margin-top: 10px;}
+
+
+/* group-detail */
+.group-detail {}
+.group-detail .group-poster {float: left; padding: 0px 20px 20px 0px; position:relative;}
+.group-poster .age-allow {position: absolute; top: 10px; left: 10px; width: 42px; height: 29px; background-image: url(/img/age-allow.png); background-repeat: no-repeat;}
+.group-poster .age-allow.age-allow-0 {background-position: 0 0px;}
+.group-poster .age-allow.age-allow-6 {background-position: 0 -29px;}
+.group-poster .age-allow.age-allow-12 {background-position: 0 -57px;}
+.group-poster .age-allow.age-allow-16 {background-position: 0 -87px;}
+.group-poster .age-allow.age-allow-18 {background-position: 0 -116px;}
+
+
+/* loader */
+.ajxloader {display: none; width: 16px; height: 16px; background-image: url(/img/loader.gif); background-repeat: no-repeat;}

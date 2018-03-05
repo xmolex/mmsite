@@ -1,0 +1,62 @@
+<h4 style="margin-top: 20px;">
+    <a href="/groups/<: $id :>"><: $title :></a>
+    : if $year {
+      (<: $year :>)
+    : }
+    / Смотреть
+</h4>
+
+
+: if $files {
+<div id="files">
+    : for $files -> $file {
+        <div style="margin-top: 15px;">
+            : if $file.is_web {
+                <a href="" OnClick="GetVideo('<: $file.num :>'); return false" title="<: $file.description :>">
+            : }
+            <: $file.title :>
+            : if $file.is_web {
+                </a>
+            : }
+            (<: $file.size :>) <a href="<: $file.url :>" onclick="file_incriment(<: $file.id :>, 0); return true;"><span class="glyphicon glyphicon-download"></span></a>
+            <div>
+                <div style="color: #999;">
+                  <span class="glyphicon glyphicon-download-alt"></span> <: $file.download :>
+                  <span class="glyphicon glyphicon-eye-open"></span> <: $file.view :><br>
+                  : if $file.translate { 
+                        Перевод: <: $file.translate :>
+                  : }
+                </div>
+                
+                : if $file.depends {
+                    <div>
+                    : for $file.depends -> $depend {
+                         <: $depend.title :> (<: $depend.size :>)
+                         <a href="<: $depend.url :>"><span class="glyphicon glyphicon-download"></span></a>
+                    : }
+                    </div>
+                : }
+                
+            </div>
+        </div>
+    : }
+</div>
+: }
+
+
+: if $player {
+  <script src="/js/video.js?v1"></script>
+  <script type="text/javascript" src="/jwplayer/js/init.js"></script>
+  <script type="text/javascript">
+  var PLAYER_PLAYLIST_WIDTH = <: $player_playlist_width :>;
+  var POPUPZINDEX = 9500;
+  var PopupGetVideoElVar = '';
+  var hasPlayed   = false;
+  var videolist   = <: $videolist :>;
+  var videoWidth  = '<: $videowidth :>';
+  var videoHeight = '<: $videoheight :>';
+  var videoAspect = "<: $videoaspect :>";
+  var videoUserId = '<: $user_id :>';
+  var videoGroupId = '<: $id :>';
+</script>
+: }

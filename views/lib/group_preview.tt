@@ -1,0 +1,14 @@
+<div class="gf-anc-one" onclick="location.href='/groups/%ID%'">
+  <div>
+    <div class="gf-anc-one-img">
+      <!--* serial --><div class="serial" title="многосерийный"></div><!--* /serial -->
+      <img src="%POSTER_URL%" alt="%POSTER_TITLE%" class="img-rounded">
+    </div>
+  </div>
+  <div class="gf-anc-one-inb">
+    <a href="/groups/%ID%">%NAME%</a><br>
+    <!--* genres --><i>жанр:</i>&nbsp;%GENRES%<br><!--* /genres -->
+    <!--* countries --><i>страна:</i>&nbsp;%COUNTRIES%<br><!--* /countries -->
+    <!--* year --><i>год:</i>&nbsp;%YEAR%<br><!--* /year -->
+  </div>
+</div>
