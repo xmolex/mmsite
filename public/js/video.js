@@ -2,17 +2,17 @@ function GetVideo(id) {
   if (!id) {id = 0;}
   var elem = '';
   if (!PopupGetVideoElVar || !document.getElementById(PopupGetVideoElVar.id)) {
-    // РјРµРЅСЏРµРј СЂР°Р·РјРµСЂ РґР»СЏ РјР°Р»РµРЅСЊРєРёС… СЌРєСЂР°РЅРѕРІ
+    // меняем размер для маленьких экранов
     var doc_w = $(document).width();
     if (videoWidth > doc_w) {
-        // РЅРµРѕР±С…РѕРґРёРјРѕ РєРѕСЂСЂРµРєС‚РёСЂРѕРІР°С‚СЊ СЂР°Р·РјРµСЂ
+        // необходимо корректировать размер
         var coof = videoWidth / doc_w;
         videoWidth = doc_w;
         videoHeight = Math.floor(videoHeight / coof);
         PLAYER_PLAYLIST_WIDTH = Math.floor(PLAYER_PLAYLIST_WIDTH / coof);
     }
   
-    // РїРѕР»Рµ close
+    // поле close
     var parent = document.getElementsByTagName('BODY')[0];
     var parentfirst = parent.getElementsByTagName('DIV')[0]
     elem = document.createElement('div');
@@ -28,7 +28,7 @@ function GetVideo(id) {
     parent.insertBefore(elem,parentfirst);
     $("body #p-w-e-c").fadeTo(0, 0.6);
   
-    // РїРѕР»Рµ СЃ РІРёРґРµРѕ
+    // поле с видео
     parent = document.getElementsByTagName('BODY')[0];
     parentfirst = parent.getElementsByTagName('DIV')[0]
     elem = document.createElement('div');
@@ -75,7 +75,7 @@ function GetVideo(id) {
   }
 }
 
-// С„СѓРЅРєС†РёСЏ СѓСЃС‚Р°РЅРѕРІР»РµРЅРёСЏ РєРѕРѕСЂРґРёРЅР°С‚ РґР»СЏ РІС‹РІРѕРґР° РІСЃРїР»С‹РІР°СЋС‰РµРіРѕ РѕРєРѕС€РєР°
+// функция установления координат для вывода всплывающего окошка
 function PopupBoxGetOrd(ident) {
   if (document.getElementById(ident)) {
     var ClientX=(window.innerWidth)?window.innerWidth:((document.all)?document.body.offsetWidth:null);

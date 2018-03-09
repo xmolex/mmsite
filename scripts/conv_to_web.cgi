@@ -15,9 +15,15 @@ use Mmsite::Lib::Files;
 use Mmsite::Lib::Groups;
 $| = 1;
 binmode STDOUT, ':utf8';
+binmode STDERR, ':utf8';
+
+###################################################################################
+# НАСТРОЙКИ
+###################################################################################
+my $PID_FILE            = $PATH_TMP . 'conv_to_web.pid'; # путь к PID файлу для этого скрипта
 
 # проверяем, не запущена ли копия программы
-if (IsRunning()) {print "Script is already running...\n"; exit;}
+die "Script is already running...\n" if is_running($PID_FILE);
  
 # основное тело программы
 work();
@@ -28,8 +34,8 @@ sub work {
         # проверяем идентификатор файла
         my $file_id = $ARGV[0];
         if ($file_id !~ m/^\d+$/) {
-            print "r1\n";
-            return();
+            say "r1";
+            return;
         }
         
         my $sql = sql("SELECT id,file FROM files WHERE id='$file_id';");
@@ -38,7 +44,7 @@ sub work {
             my %parm;
             ConvFile($file_id,\%parm);
         } else {
-            print "'$$sql[1]' not support format\n";
+            say "'$$sql[1]' not support format";
         }
     }
     else {
@@ -54,10 +60,10 @@ sub work {
                                ) AND file_id = 0 
                            ORDER BY id DESC;
                    |);
-        for ( my $i = 0; $i < scalar(@$sql); $i = $i + 2 ) {
+        for ( my $i = 0; $i < @$sql; $i = $i + 2 ) {
             # проверяем на допустимые форматы
             unless ( Mmsite::Lib::Ffmpeg::is_video_extension( get_extension $$sql[$i+1] ) ) {
-                print "File '$$sql[$i+1]' not support, skip\n\n";
+                say "File '$$sql[$i+1]' not support, skip";
                 next;
             }
         
@@ -67,17 +73,9 @@ sub work {
     }
 }
 
-sub IsRunning {
-  # выдаем истину, если программа уже запущена
-  my $flag = 0;
-  my $cmd = `ps ax | grep conv_to_web`;
-  foreach ( split /\n/,$cmd ) { if ($_ =~ m/perl/) { if ($flag) {return 1;} else {$flag = 1;} } }
-  return();
-}
-
 # кодируем файл (0 - неудача, 1 - удачно)
 sub ConvFile {
-    my $file_id = shift || return();
+    my $file_id = shift || return;
     
     my $file = Mmsite::Lib::Files->new($file_id);
     return unless $file;
@@ -88,18 +86,17 @@ sub ConvFile {
     # пережимаем
     my ($result, $error) = $file->conv_to_web();
     
-    if ($result) {
-        # пережалось успешно, нужно очистить кеш объекта группы по файлам
-        if ( $file->parent_id ) {
-            my $obj_group = Mmsite::Lib::Groups->new( $file->parent_id );
-            if ($obj_group) {
-                $obj_group->clear_cache_data_file();
-            }
-        }
-        return 1;
-    }
-    else {
-        print $error . "\n";
+    unless ($result) {
+        # не удалось пережать, выходим
+        say $error;
         return;
     }
+    
+    # пережалось успешно, нужно очистить кеш объекта группы по файлам
+    if ( $file->parent_id ) {
+        my $obj_group = Mmsite::Lib::Groups->new( $file->parent_id );
+        $obj_group->clear_cache_data_file() if $obj_group;
+    }
+    
+    return 1;
 }

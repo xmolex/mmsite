@@ -5,6 +5,7 @@ package Mmsite::Lib::Vars;
 use Modern::Perl;
 use utf8;
 use Encode;
+use Fcntl qw(:DEFAULT :flock);
 use Exporter 'import';
 
 #########################################################################################################
@@ -474,6 +475,7 @@ our @EXPORT = qw(
               &get_extension
               &convert_filename_to_latin
               &get_uniq_filename
+              &is_running
             );
 
 # получаем SQL команду и экранизируем опасности
@@ -637,6 +639,40 @@ sub get_uniq_filename {
    my $name = $sec + $min * 60 + $hour * 3600 + $mday * 86400 + $mon * 2678400 + $year * 977616000;
    $name .= int( rand(999) );
    return $name;
+}
+
+# функция проверки запуска копии скрипта
+sub is_running {
+    my ($pidfile) = @_;
+    my $result;
+
+    sysopen LOCK, $pidfile, O_RDWR|O_CREAT or die "Невозможно открыть файл $pidfile: $!";
+
+    # пытаемся заблокировать файл
+    if ( flock LOCK, LOCK_EX|LOCK_NB  ) {
+        # блокировака удалась, поэтому запишем в файл наш идентификатор процесса
+        truncate LOCK, 0 or warn "Невозможно усечь файл $pidfile: $!";
+        my $old_fh = select LOCK;
+        $| = 1;
+        select $old_fh;
+        print LOCK $$;
+        # оставим файл открытым и заблокированным
+    }
+    else {
+        # заблокировать не удалось, т.к. кто-то уже заблокировал файл
+        $result = <LOCK>;
+
+        # получим идентификатор процесса
+        if (defined $result) {
+            chomp $result;
+        }
+        else {
+            warn "Отсутствует PID в пид-файле $pidfile";
+            $result = 'block';
+        }
+    }
+
+    return $result;
 }
 
 1;

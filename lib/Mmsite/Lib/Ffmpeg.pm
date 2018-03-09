@@ -258,7 +258,12 @@ sub conv {
     
     unless ($force) {
         # определяем видео и аудио кодек файла
-        if ( $self->{'video_codec'} eq 'h264' && $self->{'audio_codec'} eq 'aac' && $self->{'audio_channels'} == 2 && $self->{'video_height'} <= $VIDEO_MAX_HEIGHT ) {
+        if ( $self->{'video_codec'} eq 'h264' 
+                && $self->{'audio_codec'} eq 'aac' 
+                && $self->{'audio_channels'} == 2 
+                && $self->{'video_height'} <= $VIDEO_MAX_HEIGHT
+                && get_extension( $self->{'path'} ) ne 'flv' # очень часто бывает рассинхрон звука и видео при простом копировании дорожек
+           ) {
            # web поддерживает эти кодеки и условия, пережимать не нужно
            $need_conv = 0;
         }
