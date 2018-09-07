@@ -1,13 +1,14 @@
+package Mmsite::Create;
 ######################################################################################
 # модуль создания нового объекта группы
 ######################################################################################
-package Mmsite::Create;
 use Dancer2 appname => 'Mmsite';
 use Modern::Perl;
 use utf8;
 use Encode;
 use Mmsite::Lib::Vars;
-use Mmsite::Lib::Auth;
+use Mmsite::Lib::Subs;
+use Mmsite::Lib::Members;
 use Mmsite::Lib::Db;
 use Mmsite::Lib::Groups;
 use Mmsite::Lib::Images;
@@ -20,8 +21,8 @@ prefix '/create';
 # форма создания нового объекта группы с файлами
 get '' => sub {
     # авторизация
-    my ( $user_id, $user_name, $user_role, $user_sys, $users_sys_id ) = Auth();
-    redirect '/' if $user_role < 2;
+    my $member_obj = Mmsite::Lib::Members->new();
+    redirect '/' if $member_obj->role < 2;
 
     # формируем необходимые структуры для javascript
     # страны
@@ -66,17 +67,18 @@ get '' => sub {
                                      'genres'          => $genres,
                                      'translates_json' => $translates_json,
                                      'allow_age_json'  => $allow_age_json,
-                                     'allow_ages' => $allow_ages,
-                                     'years'      => $years
+                                     'allow_ages'      => $allow_ages,
+                                     'years'           => $years,
+                                     'title'           => 'Добавление',
                                };
 };
 
 # добавляем новый объект группы
 post '' => sub {
     # авторизация
-    my ( $user_id, $user_name, $user_role, $user_sys, $users_sys_id ) = Auth();
-    return '{"error": "access denied"}' if $user_role < 2;
-    
+    my $member_obj = Mmsite::Lib::Members->new();
+    return '{"error": "access denied"}' if $member_obj->role < 2;
+
     my $token = body_parameters->get('token');
     return '{"error": "empty token"}' unless $token;
     
@@ -96,7 +98,7 @@ post '' => sub {
     # данные получены в json, производим обработку и проверяем на требования
     
     # получаем список файлов в пользовательской директории
-    my $path_user = $PATH_USERS . '/' . $user_id . '/';
+    my $path_user = $PATH_USERS . '/' . $member_obj->id . '/';
     opendir my ($tempdir), $path_user;
     my @file = readdir $tempdir;
     closedir $tempdir;  
@@ -192,7 +194,7 @@ post '' => sub {
                          'description'  => $description,
                          'year'         => $year,
                          'allow_age'    => $allow_age,
-                         'owner_id'     => $user_id,
+                         'owner_id'     => $member_obj->id,
                          'kinopoisk_id' => $kinopoisk,
                          'is_serial'    => $is_serial,
                          'genres'       => \@genres,
@@ -252,7 +254,7 @@ post '' => sub {
                        'source_name' => $file,
                        'source_path' => $path_user . $file,
                        'parent_id'   => $group->id,
-                       'owner_id'    => $user_id,
+                       'owner_id'    => $member_obj->id,
                        'title'       => 'poster'
         );
 
@@ -282,7 +284,7 @@ post '' => sub {
                        source_name => $file,
                        source_path => $path_user . $file,
                        parent_id   => $group->id,
-                       owner_id    => $user_id,
+                       owner_id    => $member_obj->id,
                        title       => 'shots'
         );
         # создаем объект
@@ -313,7 +315,7 @@ post '' => sub {
                        parent_id   => $group->id,
                        title       => $$lnk{'title'},
                        source_name => $file_name,
-                       owner_id    => $user_id,
+                       owner_id    => $member_obj->id,
                        translate   => 0,
                        description => ''
         );
@@ -349,7 +351,7 @@ post '' => sub {
                        group_id    => $group->id,
                        title       => $$lnk{'title'},
                        source_name => $file_name,
-                       owner_id    => $user_id,
+                       owner_id    => $member_obj->id,
                        translate   => 0,
                        description => ''
         );

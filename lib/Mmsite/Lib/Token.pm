@@ -1,11 +1,11 @@
+package Mmsite::Lib::Token;
 #################################################################
 #  Управление токенами продолжительных задач
 #################################################################
-package Mmsite::Lib::Token;
-
 use Modern::Perl;
 use utf8;
 use Mmsite::Lib::Vars;
+use Mmsite::Lib::Subs;
 use Mmsite::Lib::Db;
 
 # объявляем токен
@@ -30,15 +30,12 @@ sub new {
     bless $self, $class;
 }
 
-
-
 # получаем свойства объекта группы, возвращаем значение
 sub get {
     my ($self) = @_;
     my $sql = sql("SELECT value,complete FROM target_sessions WHERE id = '$self->{'id'}';");
     return( $$sql[0], $$sql[1] );    
 }
-
 
 # метод изменения объекта файла
 sub set {
@@ -63,8 +60,6 @@ sub set {
     return;
 }
 
-    
-
 # удаление
 # возвращаем булево
 sub delete {
@@ -84,7 +79,5 @@ sub _check_token {
     return if $token !~ m!^\w+$!;
     return 1;
 }
-
-
 
 1;

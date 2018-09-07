@@ -2,7 +2,6 @@
 ###################################################################################################################
 # скрипт получает данные о видео и выводит их на экран
 ###################################################################################################################
-
 use Modern::Perl;
 use utf8;
 use FindBin;
@@ -50,22 +49,22 @@ sub work {
     
     # выводим на экран 
     print "Map\n";
-    print "  Video => '$ffmpeg->video_track'\n";
-    print "  Audio => '$ffmpeg->audio_track'\n";
+    print "  Video => '" . $ffmpeg->video_track . "'\n";
+    print "  Audio => '" . $ffmpeg->audio_track . "'\n";
     
     print "Codec\n";
-    print "  Video => '$ffmpeg->video_codec'\n";
-    print "  Audio => '$ffmpeg->audio_codec' ($ffmpeg->audio_channels channels)\n";
+    print "  Video => '" . $ffmpeg->video_codec . "'\n";
+    print "  Audio => '" . $ffmpeg->audio_codec . "' (" . $ffmpeg->audio_channels . " channels)\n";
         
     print "Bitrate\n";
-    print "  Original => '$ffmpeg->video_bitrate'\n";
-    print "  Target   => '$ffmpeg->video_conv_bitrate'\n";
+    print "  Original => '" . $ffmpeg->video_bitrate . "'\n";
+    print "  Target   => '" . $ffmpeg->video_conv_bitrate . "'\n";
     
-    print "Duration => '$duration_text' or '$ffmpeg->video_duration' sec\n";
+    print "Duration => '$duration_text' or '" . $ffmpeg->video_duration . "' sec\n";
         
     print "Resolution\n";
-    print "  Original => '$ffmpeg->video_width x $ffmpeg->video_height'\n";
-    print "  Target   => '$ffmpeg->video_conv_width x $ffmpeg->video_conv_height'\n";
+    print "  Original => '" . $ffmpeg->video_width . " x " . $ffmpeg->video_height . "'\n";
+    print "  Target   => '" . $ffmpeg->video_conv_width . " x " . $ffmpeg->video_conv_height . "'\n";
     
     print "Audio list\n";
     foreach my $key ( sort {$a <=> $b} keys %$audio ) {
@@ -82,7 +81,4 @@ sub work {
         if ( $$subtitles{$key}{'language'} ) {print "language=>'$$subtitles{$key}{'language'}' ";}
         print "\n";
     }
-    
-    
-    
 }

@@ -86,6 +86,88 @@ function file_incriment( file_id, target ) {
    });
 }
 
+function file_view( file_id ) {
+    $.ajax({
+        type: 'POST',
+        data: ({ "file_id" : file_id }),
+        async: true,
+        url: '/view',
+        success: function (data, textStatus) {
+            if (data == 1) {
+                if( typeof videoViews !== "undefined" ) {
+                    videoViews.push(file_id);
+                    mark_file_views();
+                }
+            }
+        }
+   });
+}
+
+function all_view_from_group( group_id, type, loading_id ) {
+    // loading open
+    $("#" + loading_id).css('display','inline-block');
+
+    if (! type) {group_id = group_id * -1;}
+    $.ajax({
+        type: 'POST',
+        data: ({ "group_id" : group_id }),
+        async: true,
+        url: '/viewall',
+        success: function (data, textStatus) {
+            $("#" + loading_id).css('display','none');
+            var data = JSON.parse(data);
+            if (data.error) { alert('Ошибка: ' + data.error); return false; }
+            if( typeof videoViews !== "undefined" ) {
+                videoViews = data;
+                if (! type) {unmark_file_views();}
+                else {mark_file_views();}
+                
+            }
+        },
+        error: function (jqXHR, exception) {
+            // loading close
+            $("#" + loading_id).css('display','none');
+            // print error
+            var mess = ajax_fail(jqXHR, exception);
+            alert(mess);
+        } 
+   });
+   return false;
+}
+
+function unmark_file_views() {
+    // меняем отображение файлов, которые пользователь еще не просмотрел
+    if( typeof videoViews !== "undefined" ) {
+        for (i = 0; i < videoViews.length; i++) {
+            $("#file-title-" + videoViews[i]).css('color', '#337ab7');
+        }
+    }
+}
+
+function mark_file_views() {
+    // меняем отображение файлов, которые пользователь уже просмотрел
+    if( typeof videoViews !== "undefined" ) {
+        for (i = 0; i < videoViews.length; i++) {
+            $("#file-title-" + videoViews[i]).css('color', '#999');
+        }
+    }
+}
+
+function subscribe( group_id ) {
+    $.ajax({
+        type: 'POST',
+        data: ({ "group_id" : group_id }),
+        async: true,
+        url: '/subscribe',
+        success: function (data, textStatus) {
+            if (data == '') {alert('не удалось'); return;}
+            $("#bell").removeClass("bell-noactive bell-active")
+            if (data == '0') {$("#bell").addClass("bell-noactive");}
+            else {$("#bell").addClass("bell-active");}
+        }
+   });
+}
+
 function getHashParams() {
 
     var hashParams = {};
@@ -99,4 +181,12 @@ function getHashParams() {
        hashParams[d(e[1])] = d(e[2]);
 
     return hashParams;
+}
+
+function goto_subscribe() {
+    if (typeof filter_modify == 'function') {
+        filter_modify( 'type', 2 );
+        return false;
+    }
+    return true;
 }

@@ -66,6 +66,9 @@ function GetVideo(id) {
   jwplayer().onBuffer(function() {
     var lst = jwplayer().getPlaylistItem();
     file_incriment( lst.id, 1 );
+    if ( typeof videoUserId !== "undefined" ) {
+        if (videoUserId > 0) {file_view( lst.id );}
+    }
   });
   
   document.getElementById('p-w-e-c').onclick = function(e) {

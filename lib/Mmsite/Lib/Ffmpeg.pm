@@ -1,29 +1,25 @@
+package Mmsite::Lib::Ffmpeg;
 ################################################################################
 # модуль получения информации от ffmpeg и ffprobe по мультимедиа файлу
 ################################################################################
-package Mmsite::Lib::Ffmpeg;
-
-#  new => объявляет объект
-################################################################################
-# настройки для ffmpeg (смотри man ffmpeg)
+# настройки для ffmpeg по умолчанию (смотри man ffmpeg)
 ################################################################################
 our $FFMPEG_PAR_ASYNC  = '1';
 our $FFMPEG_PAR_AF     = '"volume=1.5"';
 ################################################################################
-
 use Modern::Perl;
 use utf8;
 use JSON::XS;
 use File::Copy;
 use Mmsite::Lib::Vars;
+use Mmsite::Lib::Subs;
 
 # объявление объекта
 sub new {
     my ( $class, $path ) = @_;
     
     # проверяем на существование файла
-    return( 0, 'error: file not found') unless (-f $path);
-
+    return( 0, 'error: file not found') unless -f $path;
     
     # делаем запрос на информацию по файлу от ffmpeg
     my $data = `$PATH_FFPROBE -v quiet -print_format json -show_streams -show_format $path`;
@@ -415,7 +411,7 @@ sub clone_subtitles {
         # извлечение
         _to_log("cd $PATH_TMP; $PATH_FFMPEG -i $self->{'path'} -map 0:$map -an -vn -c:s:0 webvtt $path_tmp_subtitle"); # лог
         system("cd $PATH_TMP; $PATH_FFMPEG -i $self->{'path'} -map 0:$map -an -vn -c:s:0 webvtt $path_tmp_subtitle");
-        sleep(2); # для возможности отменить вручную
+        sleep 2; # для возможности отменить вручную
         
         # проверка на успешность
         if (-f $path_tmp_subtitle) {
@@ -468,10 +464,10 @@ sub create_shots {
     
     # определяем интервал между кадрами в секундах
     # количество увеличено на 2, чтобы исключить начало и конец файла
-    my $interval = int( $self->{'video_duration'} / ( $count + 2 ) );
+    my $interval = int( $self->{'video_duration'} / ( $count + 1 ) );
     
     # делаем кадры
-    foreach my $c ( 0 .. $count ) {
+    foreach my $c ( 0 .. $count - 1 ) {
         # получаем время в которое нужно сделать кадр
         my $sec      = ( $c + 1 ) * $interval;
         my $sec_text = conv_sec_in_text($sec);
@@ -601,35 +597,34 @@ sub conv_sec_in_text {
 
 
 # аксессоры
-sub path           { return shift->{path}; }
-sub info           { return shift->{info}; }
-sub video_track    { return shift->{video_track}; }
-sub audio_track    { return shift->{audio_track}; }
-sub video_codec    { return shift->{video_codec}; }
-sub video_width    { return shift->{video_width}; }
-sub video_height   { return shift->{video_height}; }
-sub video_bitrate  { return shift->{video_bitrate}; }
-sub video_duration { return shift->{video_duration}; }
-sub audio_codec    { return shift->{audio_codec}; }
-sub audio_channels { return shift->{audio_channels}; }
+sub path               { return shift->{path}; }
+sub info               { return shift->{info}; }
+sub video_track        { return shift->{video_track}; }
+sub audio_track        { return shift->{audio_track}; }
+sub video_codec        { return shift->{video_codec}; }
+sub video_width        { return shift->{video_width}; }
+sub video_height       { return shift->{video_height}; }
+sub video_conv_width   { return shift->{video_conv_width}; }
+sub video_conv_height  { return shift->{video_conv_height}; }
+sub video_bitrate      { return shift->{video_bitrate}; }
+sub video_conv_bitrate { return shift->{video_conv_bitrate}; }
+sub video_duration     { return shift->{video_duration}; }
+sub audio_codec        { return shift->{audio_codec}; }
+sub audio_channels     { return shift->{audio_channels}; }
 
 
 # локальные функции
 # получаем строку лога и записываем в файл
 sub _to_log {
-    my $text = $_[0] || return;
-    
-    # получаем время
-    my $time = get_sql_time();
+    my $text = shift || return;
+    return unless $DEBUG;
     
     # получаем инициатора
     my ( $package, $filename, $line ) = caller;
     
-    # открываем файл и записываем
-    open my $fn, ">>:utf8", $PATH_LOG_FFMPEG;
-    return unless $fn;
-    say $fn $time . "\t" . "$package:$line" . "\t" . $text;
-    close $fn;
+    # записываем
+    $text = "$package:$line| " . $text;
+    to_log( $PATH_LOG_FFMPEG, 'FFMPEG', $text );
 }
 
 1;

@@ -1,11 +1,12 @@
+package Mmsite::Token;
 ######################################################################################
 # модуль для отображения информации выполнения продолжительных по времени задач
 ######################################################################################
-package Mmsite::Token;
 use Dancer2 appname => 'Mmsite';
 use Modern::Perl;
 use utf8;
 use Mmsite::Lib::Vars;
+use Mmsite::Lib::Subs;
 use Mmsite::Lib::Token;
 
 prefix '/token';

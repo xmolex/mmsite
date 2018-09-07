@@ -2,13 +2,13 @@
 ###################################################################################################################
 # скрипт создает изображения случайных кадров указанного видео или серии видео
 ###################################################################################################################
-
 use Modern::Perl;
 use utf8;
 use FindBin;
 use lib "$FindBin::Bin/../lib";
 use File::Copy;
 use Mmsite::Lib::Vars;
+use Mmsite::Lib::Subs;
 use Mmsite::Lib::Db;
 use Mmsite::Lib::Ffmpeg;
 use Mmsite::Lib::Groups;
@@ -70,7 +70,7 @@ sub work {
     # проходимся по видео файлам и нарезаем кадры
     for (my $i = 0; $i < scalar(@files); $i = $i + 13) {
         # проверяем, на количество уже сделанных кадров
-        last if scalar(@count_conv) >= $MAX_AUTO_SHOTS ;
+        last if scalar(@count_conv) >= $MAX_AUTO_SHOTS;
     
         # если это видео файл, обрабатываем его
         if ($files[$i]) {
@@ -85,9 +85,8 @@ sub work {
             if ( scalar(@count_conv) + $count_in_one_video > $MAX_AUTO_SHOTS ) {
                 $count_in_one_video = $MAX_AUTO_SHOTS - scalar(@count_conv);
             }
-            
+
             my $result = $video->create_shots($count_in_one_video);
-            
             foreach (@$result) {
                 
                 if (-f $_) {

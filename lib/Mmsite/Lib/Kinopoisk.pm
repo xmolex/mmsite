@@ -1,17 +1,16 @@
+package Mmsite::Lib::Kinopoisk;
 #################################################################
 #  работа с kinopoisk.ru
 #################################################################
-package Mmsite::Lib::Kinopoisk;
-
 use Modern::Perl;
 use LWP 5.64;
 use HTTP::Cookies;
 use Mmsite::Lib::Vars;
+use Mmsite::Lib::Subs;
 
 use constant DOWNLOAD_AGENT => 'Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 5.1; Trident/4.0; .NET CLR 2.0.50727; .NET CLR 3.0.4506.2152; .NET CLR 3.5.30729; .NET4.0C)';
 use constant HTTP_REFERER   => 'https://kinopoisk.ru';
 use constant HTTP_ACCEPT    => 'text/html, */*;q=0.1';
-
 use constant URI_CAPTCHA    => 'https://www.kinopoisk.ru/checkcaptcha'; # uri к странице kinopoisk.ru с проверкой капчи
 use constant URI_FILM       => 'https://www.kinopoisk.ru/film';         # uri к странице kinopoisk.ru с информацией о фильме
 

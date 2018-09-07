@@ -4,33 +4,46 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta charset="<: $settings.charset :>">
-    <title><: $title :></title>
+    <title><: $title :> - <: $site_name :></title>
     <link rel="stylesheet" href="/css/bootstrap.min.css">
-    <link rel="stylesheet" href="/css/style.css?v1">
+    <link rel="stylesheet" href="/css/style.css?v0.20">
     <script src="/js/jquery-3.2.1.min.js"></script>
     <script src="/js/bootstrap.min.js"></script>
-    <script src="/js/basic.js?v1"></script>
+    <script src="/js/basic.js?v0.20"></script>
   </head>
 <body>
 <div class="container">
+    <div id="toTop">вверх</div>
     <div id="header" style="background-color: #f8f8f8; border: 2px solid #d6e0f5; line-height: 3em;">
         <a style="display: inline-block; padding: 0px 20px; vertical-align: middle; font-size: 1.5em;" href="/"><: $site_name :></a>
         <div id="auth" style="display: inline-block;vertical-align: middle;padding: 0px 20px; float: right;">
             : if $user_id {
-               <div><: $user_name :> <a href="/exit?from=<: $from :>">Выход</a></div>
+                <div class="btn-group">
+                  <button type="button" class="btn btn-primary btn-sm dropdown-toggle" data-toggle="dropdown"><: $user_name :> <span class="caret"></span></button>
+                  <ul class="dropdown-menu" role="menu">
+                    : if ( $user_role > 1 ) {
+                    <li><a href="/create">Добавить</a></li>
+                    : }
+                    <li><a href="/#type=2" onclick="goto_subscribe();">Подписки</a></li>
+                    <li><a href="/exit?from=<: $from :>">Выход</a></li>
+                  </ul>
+                </div>
             : }
             : if !$user_id {
-               <div><a href="/auth_vk?from=<: $from :>">Войти</a></div>
+                <div class="btn-group">
+                  <button type="button" class="btn btn-default btn-sm dropdown-toggle" data-toggle="dropdown">Войти <span class="caret"></span></button>
+                  <ul class="dropdown-menu" role="menu">
+                    <li><a href="/auth_vk?from=<: $from :>">vk.com</a></li>
+                    <li><a href="/auth_pface?from=<: $from :>">pface.ru</a></li>
+                  </ul>
+                </div>
             : }
         </div>
     </div>
     <form name="search" id="sform" onsubmit="sformgo(); return false;">
     <div id="search" class="row">
-        <div class="col-md-10">
+        <div>
           <input name="stext" value="" placeholder="введите название" class="form-control" id="stext" style="width: 100%;">
-        </div>
-        <div class="col-md-2">
-          <input name="ssubmit" type="submit" value="Найти" class="btn btn-default" id="ssubmit" style="width: 100%;">
         </div>
     </div>
     </form>
@@ -49,5 +62,33 @@ function sformgo() {
 }
 </script>
 
+<!-- Yandex.Metrika counter -->
+<script type="text/javascript" >
+    (function (d, w, c) {
+        (w[c] = w[c] || []).push(function() {
+            try {
+                w.yaCounter48306644 = new Ya.Metrika({
+                    id:48306644,
+                    clickmap:true,
+                    trackLinks:true,
+                    accurateTrackBounce:true
+                });
+            } catch(e) { }
+        });
+
+        var n = d.getElementsByTagName("script")[0],
+            s = d.createElement("script"),
+            f = function () { n.parentNode.insertBefore(s, n); };
+        s.type = "text/javascript";
+        s.async = true;
+        s.src = "https://mc.yandex.ru/metrika/watch.js";
+
+        if (w.opera == "[object Opera]") {
+            d.addEventListener("DOMContentLoaded", f, false);
+        } else { f(); }
+    })(document, window, "yandex_metrika_callbacks");
+</script>
+<noscript><div><img src="https://mc.yandex.ru/watch/48306644" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
+<!-- /Yandex.Metrika counter -->
 </body>
 </html>

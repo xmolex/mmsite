@@ -1,8 +1,7 @@
+package Mmsite::Lib::Groups;
 ################################################################################
 #  Управление разделами
 ################################################################################
-package Mmsite::Lib::Groups;
-
 #  new => объявляет объект группы
 #  create => создает объект группы и возвращает указатель на него
 #  get => получение общей информации об объекте
@@ -22,26 +21,27 @@ package Mmsite::Lib::Groups;
 #  clear_cache_data_image => сброс кеша с данными об изображениях объекта
 #  clear_cache_data_file => сброс кеша с данными об файлах объекта
 #  clear_cache_data_preview => сброс кеша с данными готовой превьюшки объекта
-
 ################################################################################
 # настройки
 ################################################################################
-my $SUF_PREVIEW = 'group_preview_'; # суффикс ключа memcached для превью
-my $SUF_DATA    = 'group_data_';    # суффикс ключа memcached для хранения данных из базы
-my $SUF_IMAGE   = 'group_image_';   # суффикс ключа memcached для хранения данных об изображениях
-my $SUF_FILE    = 'group_file_';    # суффикс ключа memcached для хранения данных о файлах
+my $SUF_PREVIEW      = 'group_preview_'; # суффикс ключа memcached для превью
+my $SUF_DATA         = 'group_data_';    # суффикс ключа memcached для хранения данных из базы
+my $SUF_DATA_VERSION = 'group_data_version_'; # суффикс ключа memcached для хранения данных версии из базы
+my $SUF_IMAGE        = 'group_image_';   # суффикс ключа memcached для хранения данных об изображениях
+my $SUF_FILE         = 'group_file_';    # суффикс ключа memcached для хранения данных о файлах
 ################################################################################
-
 use Modern::Perl;
 use utf8;
 use JSON::XS;
 use Data::Structure::Util qw( unbless );
 use Mmsite::Lib::Vars;
+use Mmsite::Lib::Subs;
 use Mmsite::Lib::Db;
 use Mmsite::Lib::Mem;
 use Mmsite::Lib::Images;
 use Mmsite::Lib::Files;
 use Mmsite::Lib::Template;
+use Mmsite::Lib::Members::Subscribe;
 
 # инициализируем объект json
 my $json_xs = JSON::XS->new();
@@ -171,20 +171,32 @@ sub create {
 sub get {
     my ($self) = @_;
     
-    # пытаемся взять данные из кеша
-    my $json_decode;
-    my $key = $SUF_DATA . $self->{'id'};
-    my $memcached = mem_get()->get($key);
-    if ($memcached) {
-        # данные есть, распарсиваем
-        on_utf8(\$memcached);
-        if (eval { $json_decode = $json_xs->decode($memcached); }) {
-            # удалось распарсить, заносим данные в свойства объекта
-            while ( my( $key, $val ) = each(%$json_decode) ) {
-                $self->{$key} = $val;
-            }
+    # проверяем версию данных в кеше
+    my $version_key = $SUF_DATA_VERSION . $self->{'id'};
+    my $version_val = mem_get()->get($version_key);
+    if ( $version_val && $version_val == $self->{'data_version'} ) {
+        # актуальные данные уже в памяти
+        return 1;
+    }
+    else {
+        # пытаемся взять данные из кеша
+        my $json_decode;
+        my $key = $SUF_DATA . $self->{'id'};
+        my $memcached = mem_get()->get($key);
+        if ($memcached) {
+            # данные есть, распарсиваем
+            on_utf8(\$memcached);
+            if (eval { $json_decode = $json_xs->decode($memcached); }) {
+                # удалось распарсить, заносим данные в свойства объекта
+                while ( my( $key, $val ) = each(%$json_decode) ) {
+                    $self->{$key} = $val;
+                }
+                
+                # помечаем, что данные у нас определенной версии
+                $self->{'data_version'} = $version_val;
             
-            return 1;
+                return 1;
+            }
         }
     }
     
@@ -223,9 +235,13 @@ sub get {
     }
 
     # заносим данные в хэш
-    $memcached = $json_xs->encode(\%hash);
+    my $key = $SUF_DATA . $self->{'id'};
+    my $memcached = $json_xs->encode(\%hash);
     mem_get()->delete($key);
     mem_get()->add( $key, $memcached );
+    # устанавливаем текущую версию
+    mem_get()->incr($version_key);
+    $self->{'data_version'} = mem_get()->get($version_key);
 
     return 1;    
 }
@@ -676,8 +692,12 @@ sub delete {
     # очищаем кеши
     $self->clear_cache_data_preview();
     $self->clear_cache_data();
+    $self->clear_cache_data_version();
     $self->clear_cache_data_image();
     $self->clear_cache_data_file();
+    
+    # удаляем подписки
+    Mmsite::Lib::Members::Subscribe::subscribe_delete_force($self->{'id'});
     
     # удаляем объект и данные
     my $id = $self->{'id'};
@@ -710,6 +730,13 @@ sub delete_in_listing {
 sub clear_cache_data {
     my ( $self ) = @_;
     my $key = $SUF_DATA . $self->{'id'};
+    mem_get()->delete($key);
+    return;
+}
+
+sub clear_cache_data_version {
+    my ( $self ) = @_;
+    my $key = $SUF_DATA_VERSION . $self->{'id'};
     mem_get()->delete($key);
     return;
 }

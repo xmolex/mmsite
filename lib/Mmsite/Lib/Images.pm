@@ -1,14 +1,12 @@
-#################################################################
-#  Управление изображениями (постеры, кадры, фото)
-#################################################################
 package Mmsite::Lib::Images;
-
+################################################################################
+#  Управление изображениями (постеры, кадры, фото)
 ################################################################################
 # настройки
 ################################################################################
-my $MEM_SUF_IMG_DATA = 'image_data_'; # memcached: суффикс ключа данных изображения
+my $MEM_SUF_IMG_DATA         = 'image_data_';         # memcached: суффикс ключа данных изображения
+my $MEM_SUF_IMG_DATA_VERSION = 'image_data_version_'; # memcached: суффикс ключа данных версии изображения
 ################################################################################
-
 use Modern::Perl;
 use utf8;
 use Image::Magick;
@@ -16,6 +14,7 @@ use JSON::XS;
 use File::Copy;
 use Data::Structure::Util qw( unbless );
 use Mmsite::Lib::Vars;
+use Mmsite::Lib::Subs;
 use Mmsite::Lib::Db;
 use Mmsite::Lib::Mem;
 
@@ -48,20 +47,32 @@ sub new {
 sub get {
     my ($self) = @_;
     
-    # пытаемся взять данные из кеша
-    my $json_decode;
-    my $key = $MEM_SUF_IMG_DATA . $self->{'id'};
-    my $memcached = mem_get()->get($key);
-    if ($memcached) {
-        # данные есть, распарсиваем
-        on_utf8(\$memcached);
-        if (eval { $json_decode = $json_xs->decode($memcached); }) {
-            # удалось распарсить, заносим данные в свойства объекта
-            while ( my( $key, $val ) = each(%$json_decode) ) {
-                $self->{$key} = $val;
+    # проверяем версию данных в кеше
+    my $version_key = $MEM_SUF_IMG_DATA_VERSION . $self->{'id'};
+    my $version_val = mem_get()->get($version_key);
+    if ( $version_val && $version_val == $self->{'data_version'} ) {
+        # актуальные данные уже в памяти
+        return 1;
+    }
+    else {
+        # пытаемся взять данные из кеша
+        my $json_decode;
+        my $key = $MEM_SUF_IMG_DATA . $self->{'id'};
+        my $memcached = mem_get()->get($key);
+        if ($memcached) {
+            # данные есть, распарсиваем
+            on_utf8(\$memcached);
+            if (eval { $json_decode = $json_xs->decode($memcached); }) {
+                # удалось распарсить, заносим данные в свойства объекта
+                while ( my( $key, $val ) = each(%$json_decode) ) {
+                    $self->{$key} = $val;
+                }
+
+                # помечаем, что данные у нас определенной версии
+                $self->{'data_version'} = $version_val;
+
+                return 1;
             }
-            
-            return 1;
         }
     }
     
@@ -91,9 +102,13 @@ sub get {
     }
 
     # заносим данные в хэш
-    $memcached = $json_xs->encode(\%hash);
+    my $key = $MEM_SUF_IMG_DATA . $self->{'id'};
+    my $memcached = $json_xs->encode(\%hash);
     mem_get()->delete($key);
     mem_get()->add( $key, $memcached );
+    # устанавливаем текущую версию
+    mem_get()->incr($version_key);
+    $self->{'data_version'} = mem_get()->get($version_key);
 
     return 1;    
 }
@@ -289,6 +304,7 @@ sub delete {
         
         # чистим кеш
         $self->clear_cache_data();
+        $self->clear_cache_data_version();
         
         # удаляем объект и данные
         my $id = $self->{'id'};
@@ -306,6 +322,13 @@ sub delete {
 sub clear_cache_data {
     my ( $self ) = @_;
     my $key = $MEM_SUF_IMG_DATA . $self->{'id'};
+    mem_get()->delete($key);
+    return;
+}
+
+sub clear_cache_data_version {
+    my ( $self ) = @_;
+    my $key = $MEM_SUF_IMG_DATA_VERSION . $self->{'id'};
     mem_get()->delete($key);
     return;
 }

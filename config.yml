@@ -1,56 +1,223 @@
-# This is the main configuration file of your Dancer2 app
-# env-related settings should go to environments/$env.yml
-# all the settings in this file will be loaded at Dancer's startup.
-
-# Your application's name
+### НАСТРОЙКИ DANCER2 ###
 appname: "Mmsite"
 
-# The default layout to use for your application (located in
-# views/layouts/main.tt)
 layout: "main"
 
-# when the charset is set to UTF-8 Dancer2 will handle for you
-# all the magic of encoding and decoding. You should not care
-# about unicode within your app when this setting is set (recommended).
 charset: "UTF-8"
 
-# template engine
-# simple: default and very basic template engine
-# template_toolkit: TT
-
-################template: "simple"
 template: Xslate
 engines:
   template:
     Xslate: { path: "", type: 'text' }
 
-# template: "template_toolkit"
-# engines:
-#   template:
-#     template_toolkit:
-#       start_tag: '<%'
-#       end_tag:   '%>'
+### НАСТРОЙКИ MMSITE ###
+ # активация дебаг режима для логов
+DEBUG: 1
 
-# session engine
-#
-# Simple: in-memory session store - Dancer2::Session::Simple
-# YAML: session stored in YAML files - Dancer2::Session::YAML
-#
-# Check out metacpan for other session storage options:
-# https://metacpan.org/search?q=Dancer2%3A%3ASession&search_type=modules
-#
-# Default value for 'cookie_name' is 'dancer.session'. If you run multiple
-# Dancer apps on the same host then you will need to make sure 'cookie_name'
-# is different for each app.
-#
-#engines:
-#  session:
-#    Simple:
-#      cookie_name: testapp.session
-#
-#engines:
-#  session:
-#    YAML:
-#      cookie_name: eshop.session
-#      is_secure: 1
-#      is_http_only: 1
+# количество выводимых анонсов объектов группы по умолчанию
+COUNT_OBJECT_ANONCE: 20
+
+
+# настройки базы
+ # postgresql: server ip
+DB_HOST: '127.0.0.1'
+ # postgresql: server port
+DB_PORT: '5432'
+ # postgresql: database name
+DB_NAME: 'mmsite'
+ # postgresql: database user
+DB_USER: 'database'
+ # postgresql: database password
+DB_PASS: ''
+
+
+# настройки vk.com
+ # vk.com версия API
+AUTH_VK_VER: '5.52'
+ # vk.com идентификатор приложения
+AUTH_VK_ID: '604'
+ # vk.com секретный ключ приложения
+AUTH_VK_KEY: 'Wl7tNMUji7'
+
+# настройки pface.ru
+ # pface.ru идентификатор приложения
+AUTH_PFACE_ID: '12'
+ # pface.ru секретный ключ приложения
+AUTH_PFACE_KEY: '98d7e2ff86ce2b9a36d8555da1c'
+
+# настройки URL и PATH
+ # сайт
+SITE_NAME: 'xmolex.ru'
+
+ # путь к корневому каталогу
+PATH_ROOT: '/home/http/Mmsite/'
+
+ # путь к ffmpeg
+PATH_FFMPEG: '/usr/local/bin/ffmpeg'
+
+ # путь к ffprobe из пакета ffmpeg
+PATH_FFPROBE: '/usr/local/bin/ffprobe'
+
+ # путь к qt-faststart
+PATH_QTFASTSTART: '/usr/local/bin/qt-faststart'
+
+ # путь к каталогу со скриптами
+PATH_SCRIPTS: '/home/http/Mmsite/scripts/'
+
+ # путь к каталогу с логами
+PATH_LOGS: '/home/http/Mmsite/logs/'
+
+ # путь к каталогу с шаблонами для модулей
+PATH_TEMPLATES: '/home/http/Mmsite/views/lib/'
+
+ # путь к каталогу с пользовательскими директориями
+PATH_USERS: '/home/http/Mmsite/users/tmp/'
+
+ # путь к каталогу с временным содержимым
+PATH_TMP: '/home/http/Mmsite/tmp/'
+
+ # корневой URL сайта
+SITE_URL: 'http://xmolex.ru/'
+
+ # URL файлов
+SITE_DATA_URL: 'http://xmolex.ru/'
+
+ # путь к каталогу с файлами
+PATH_FILES: '/home/http/Mmsite/data/files_web/'
+
+ # путь к каталогу с превьюшками для видео
+PATH_FILES_IMG: '/home/http/Mmsite/data/files_img/'
+
+ # путь к каталогу с исходниками для видео
+PATH_FILES_SOURCE: '/home/http/Mmsite/data/files_sources/'
+
+ # путь к каталогу с постерами
+PATH_POSTERS: '/home/http/Mmsite/data/posters/'
+
+ # путь к каталогу с кадрами
+PATH_SHOTS: '/home/http/Mmsite/data/shots/'
+
+ # путь к каталогу с фото
+PATH_PHOTOS: '/home/http/Mmsite/data/photos/'
+
+ # url с файлами
+URL_FILES: 'http://xmolex.ru/files_web/'
+
+ # url с превьюшками для видео
+URL_FILES_IMG: 'http://xmolex.ru/files_img/'
+
+ # url с постерами
+URL_POSTERS: 'http://xmolex.ru/posters/'
+
+ # url с кадрами
+URL_SHOTS: 'http://xmolex.ru/shots/'
+
+ # url с фото
+URL_PHOTOS: 'http://xmolex.ru/photos/'
+
+ # url к каталогу, где хранятся временные файлы пользователей
+URL_USERS_DATA: 'http://xmolex.ru/tmp/'
+
+ # путь к постеру по умолчанию
+URL_POSTERS_DEF: 'http://xmolex.ru/posters/0.jpg'
+
+ # путь к постеру по умолчанию (превью)
+URL_POSTERS_DEF_MINI: 'http://xmolex.ru/posters/0_mini.jpg'
+
+ # путь к фото по умолчанию
+URL_PHOTOS_DEF: 'http://xmolex.ru/photos/0.jpg'
+
+ # путь к фото по умолчанию (превью)
+URL_PHOTOS_DEF_MINI: 'http://xmolex.ru/photos/0_mini.jpg'
+
+ # путь к логу базы данных
+PATH_LOG_DB: '/home/http/Mmsite/logs/db.log'
+
+ # путь к логу ffmpeg
+PATH_LOG_FFMPEG: '/home/http/Mmsite/logs/ffmpeg.log'
+
+ # путь к логу ответов от vk.com
+PATH_LOG_VK: '/home/http/Mmsite/logs/vk.log'
+
+
+# настройки cookie
+ # имя cookie для хранения первой сессии pface.ru
+AUTH_COOKIE_PFACE_1: 'pface_s1'
+ # имя cookie для хранения второй сессии pface.ru
+AUTH_COOKIE_PFACE_2: 'pface_s2'
+ # имя cookie для хранения идентификатора пользователя vk.com
+AUTH_COOKIE_VK_ID: 'vkid'
+ # имя cookie для хранения сессии пользователя vk.com
+AUTH_COOKIE_VK_SESS: 'vksess'
+ # имя cookie для хранения url перехода после авторизации
+AUTH_COOKIE_FROM: 'from'
+
+
+# настройки изображений
+ # префикс к имени изображения (оригинал)
+IMG_SUF_ORIG: ''
+
+ # префикс к имени изображения
+IMG_SUF_STD: '_std_'
+
+ # префикс к имени изображения (превью)
+IMG_SUF_MINI: '_mini_'
+
+ # минимальная ширина для постеров
+IMG_POSTER_X: 200
+
+ # минимальная высота для постеров
+IMG_POSTER_Y: 283
+
+ # минимальная ширина для постеров (превью)
+IMG_POSTER_MINI_X: 120
+
+ # минимальная высота для постеров (превью)
+IMG_POSTER_MINI_Y: 170
+
+ # минимальная ширина для фото
+IMG_PHOTO_X: 200
+
+ # минимальная высота для фото
+IMG_PHOTO_Y: 283
+
+ # минимальная ширина для фото (превью)
+IMG_PHOTO_MINI_X: 120
+
+ # минимальная высота для фото (превью)
+IMG_PHOTO_MINI_Y: 170
+
+ # минимальная ширина для кадров
+IMG_SHOT_X: 350
+
+ # минимальная высота для кадров
+IMG_SHOT_Y: 350
+
+ # минимальная ширина для кадров (превью)
+IMG_SHOT_MINI_X: 100
+
+ # минимальная высота для кадров (превью)
+IMG_SHOT_MINI_Y: 80
+
+ # максимальное количество кадров для одного объекта группы при автоматической генерации
+MAX_AUTO_SHOTS: 8
+
+
+# настройки плеера и видеоконвертации
+ # размер по ширине отображения плейлиста в видеоплеере
+PLAYER_PLAYLIST_WIDTH: 310
+
+ # размер максимальной ширины трейлера
+PLAYER_TRAILER_WIDTH_MAX: 300
+
+ # максимальный размер высоты видео. если будет больше, обязательно будет пережато
+VIDEO_MAX_HEIGHT: 800
+
+ # максимальный размер ширины видео. если будет больше, обязательно будет пережато
+VIDEO_MAX_WIDTH: 1280
+
+ # максимальный битрейт видео. если будет больше, обязательно будет пережато
+VIDEO_MAX_BITRATE: 6000
+
+ # uri адрес сервера kinopoisk.ru для постеров
+KINOPOISK_URI_POSTER: 'https://st.kp.yandex.net'

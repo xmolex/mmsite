@@ -1,12 +1,12 @@
+package Mmsite::Groups;
 ######################################################################################
 # вывод информации об объекте группы
 ######################################################################################
-package Mmsite::Groups;
 use Dancer2 appname => 'Mmsite';
 use Modern::Perl;
 use utf8;
 use Mmsite::Lib::Vars;
-use Mmsite::Lib::Auth;
+use Mmsite::Lib::Members;
 
 prefix '/groups';
 
@@ -20,7 +20,7 @@ any '/:group_id' => sub {
     redirect '/' unless $obj;
     
     # авторизация
-    my ( $user_id, $user_name, $user_role, $user_sys, $users_sys_id ) = Auth();  
+    my $member_obj = Mmsite::Lib::Members->new();
     
     $obj->get();
     # жанры
@@ -88,6 +88,10 @@ any '/:group_id' => sub {
     
     # проверка на доступ просмотра
     my $allow_show = 1;
+    
+    # подписка
+    my $bell = 'bell-noactive';
+    if ( $member_obj->is_subscribe($group_id) ) {$bell = 'bell-active';}
  
     # выводим
     template 'group_info' => {
@@ -106,7 +110,9 @@ any '/:group_id' => sub {
                                 'countries'    => $countries,
                                 'shots'        => $shots,
                                 'trailers'     => $trailers,
-                                'user_role'    => $user_role
+                                'user_role'    => $member_obj->role,
+                                'user_id'      => $member_obj->id,
+                                'bell'         => $bell
                              };
 };
 

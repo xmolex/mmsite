@@ -1,15 +1,16 @@
+package Mmsite::Files;
 ######################################################################################
 # вывод информации о файлах объекта группы
 ######################################################################################
-package Mmsite::Gfiles;
 use Dancer2 appname => 'Mmsite';
 use Modern::Perl;
 use utf8;
 use Mmsite::Lib::Vars;
-use Mmsite::Lib::Auth;
+use Mmsite::Lib::Subs;
 use Mmsite::Lib::Files;
+use Mmsite::Lib::Members;
 
-prefix '/gfiles';
+prefix '/files';
 
 # выводим информацию о группе
 any '/:group_id' => sub {
@@ -21,7 +22,7 @@ any '/:group_id' => sub {
     redirect '/' if !$obj;
     
     # получаем информацию о текущем пользователе
-    my ( $user_id, $user_name, $user_role, $user_sys, $users_sys_id ) = Auth();  
+    my $member_obj = Mmsite::Lib::Members->new();
    
     # получаем информацию об объекте группы
     $obj->get();
@@ -32,7 +33,8 @@ any '/:group_id' => sub {
     my @playlist      = (); # структура плейлиста
     
     # файлы
-    my $files;
+    my @files;
+    my @views;
     # запрашиваем файлы данного объекта, вместе с информацией о них
     my @files_mass = $obj->get_files('view'); # [ id, title, file, size, res_x, res_y, is_web, count_download, count_view, translate, description, duration, dependent ]
     
@@ -59,8 +61,8 @@ any '/:group_id' => sub {
                           num         => $count
             };
             
-            # увеличиваем порядковый номер
-            $count++;
+            # увеличиваем порядковый номер, если это файл пережат под веб, для порядкового номера в плеере
+            if ($files_mass[$i+6]) {$count++;}
             
             
             # если есть зависимые файлы, то их также необходимо добавить
@@ -69,7 +71,7 @@ any '/:group_id' => sub {
             my @subtitles = ();
                 
             # если есть зависимые файлы
-            if (scalar(@{$files_mass[$i+12]})) {
+            if ( ref $files_mass[$i+12] eq 'ARRAY' && scalar( @{$files_mass[$i+12]} ) ) {
                 # проходимся по каждому файлу и собираем информацию о нем
                 foreach my $depend_id (@{$files_mass[$i+12]}) {
                     my $depend = Mmsite::Lib::Files->new($depend_id);
@@ -99,11 +101,17 @@ any '/:group_id' => sub {
             }
 
             # собираем массив с информацией обо всех файлах    
-            push @$files, $data;
+            push @files, $data;
             
             # если файл является пережатым для просмотра, отмечаем, что нужен плеер с заданной шириной/высотой
             if ($files_mass[$i+6]) {
                 $player = 1;
+                
+                # если данный файл уже просматривали, указываем это
+                if ( $member_obj->is_view($files_mass[$i]) ) {
+                    push @views, $files_mass[$i];
+                }
+                
                 if ($player_width  < $files_mass[$i+4] + $PLAYER_PLAYLIST_WIDTH) {$player_width  = $files_mass[$i+4] + $PLAYER_PLAYLIST_WIDTH;} # приплюсовываем $PLAYER_PLAYLIST_WIDTH, т.к. размер плейлиста тоже считается
                 if ($player_height < $files_mass[$i+5]) {$player_height = $files_mass[$i+5];}
                 
@@ -128,20 +136,27 @@ any '/:group_id' => sub {
  
     # переводим плейлист в json для jwplayer
     my $playlist = to_json \@playlist;
+    
+    # перевернем список файлов, чтобы сначала были новые серии
+    @files = reverse @files;
+    
+    # формируем массив js для просмотренных файлов
+    my $views = join ",", @views;
  
     # выводим
     template 'group_files' => {
                                 id          => $group_id,
                                 title       => $obj->title,
                                 year        => $obj->year,
-                                files       => $files,
-                                user_id     => $user_id,
+                                files       => \@files,
+                                user_id     => $member_obj->id,
                                 videoaspect => 0,
                                 videoheight => $player_height,
                                 videowidth  => $player_width,
                                 videolist   => $playlist,
                                 player      => $player,
-                                player_playlist_width => $PLAYER_PLAYLIST_WIDTH # ширина влейлиста в видеоплеере
+                                views       => $views,
+                                player_playlist_width => $PLAYER_PLAYLIST_WIDTH # ширина плейлиста в видеоплеере
                              };
                              
 };

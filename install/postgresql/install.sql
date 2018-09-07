@@ -131,3 +131,15 @@ CREATE TABLE public.target_sessions (
 );
 COMMENT ON TABLE public.target_sessions
   IS 'Таблица хранит информацию по статусу долгих запросов для реализации возврата промежуточных данных при ajax запросе.';
+  
+CREATE TABLE member_views (
+  member_id bigint NOT NULL DEFAULT 0,
+  file_id bigint NOT NULL DEFAULT 0,
+  CONSTRAINT member_views_pkey PRIMARY KEY (member_id, file_id )
+)
+
+CREATE TABLE member_subscribes (
+  member_id bigint NOT NULL DEFAULT 0,
+  group_id bigint NOT NULL DEFAULT 0,
+  CONSTRAINT member_subscribes_pkey PRIMARY KEY (member_id, group_id )
+)

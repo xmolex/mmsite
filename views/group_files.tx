@@ -6,13 +6,20 @@
     / Смотреть
 </h4>
 
+: if ( $player && $user_id ) {
+<div class="manage-file-view">
+<a href="" onclick="all_view_from_group( <: $id :>, 1, 'loader8' ); return false" title="отметить все видео просмотренными"><span class="glyphicon glyphicon-eye-open"></span></a>
+<a href="" onclick="all_view_from_group( <: $id :>, 0, 'loader8' ); return false" title="отметить все видео непросмотренными"><span class="glyphicon glyphicon-eye-close"></span></a>
+<span class="ajxloader" id="loader8"></span>
+</div>
+: }
 
 : if $files {
 <div id="files">
     : for $files -> $file {
         <div style="margin-top: 15px;">
             : if $file.is_web {
-                <a href="" OnClick="GetVideo('<: $file.num :>'); return false" title="<: $file.description :>">
+                <a href="" OnClick="GetVideo('<: $file.num :>'); return false" title="<: $file.description :>" id="file-title-<: $file.id :>">
             : }
             <: $file.title :>
             : if $file.is_web {
@@ -45,8 +52,8 @@
 
 
 : if $player {
-  <script src="/js/video.js?v1"></script>
-  <script type="text/javascript" src="/jwplayer/js/init.js"></script>
+  <script src="/js/video.js?v0.20"></script>
+  <script type="text/javascript" src="/jwplayer/js/init.js?v0.20"></script>
   <script type="text/javascript">
   var PLAYER_PLAYLIST_WIDTH = <: $player_playlist_width :>;
   var POPUPZINDEX = 9500;
@@ -58,5 +65,18 @@
   var videoAspect = "<: $videoaspect :>";
   var videoUserId = '<: $user_id :>';
   var videoGroupId = '<: $id :>';
+  var videoViews = [<: $views :>];
+  mark_file_views();
 </script>
 : }
+
+<script type="text/javascript">
+$(function() {
+    $(window).scroll(function() {
+        if($(this).scrollTop() != 0) {$('#toTop').fadeIn();} else {$('#toTop').fadeOut();}
+    });
+    $('#toTop').click(function() {
+        $('body,html').animate({scrollTop:0},800);
+    });
+});
+</script>

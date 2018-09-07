@@ -1,5 +1,25 @@
-<div class="row">
-  <div class="col-md-10" role="main" >
+<div id="filter-body" style="margin: 10px 0px;">
+      <select name="filter-year" id="filter-year" onchange="filter_modify('year',this.value)" class="btn btn-default btn-sm">
+        <option value="0">Год: не указан</option>
+        <: $years :>
+      </select>
+      <select name="filter-genres" id="filter-genres" onchange="filter_modify('genre',this.value)" class="btn btn-default btn-sm">
+        <option value="0">Жанр: не указан</option>
+        <: $meny :>
+      </select>
+      <select name="filter-countries" id="filter-countries" onchange="filter_modify('country',this.value)" class="btn btn-default btn-sm">
+        <option value="0">Страна: не указана</option>
+        <option value="2">Россия</option>
+        <option value="1">США</option>
+        <: $countries :>
+      </select>
+      <select name="filter-type" id="filter-type" onchange="filter_modify('type',this.value)" class="btn btn-default btn-sm">
+        <option value="0">Тип: не указан</option>
+        <option value="1">Сериал</option>
+        <option value="-1">Фильм</option>
+      </select>
+</div>
+<div role="main">
       <div id="group-anonce-body">
       : if $anonces {
           : for $html_anonces -> $html {
@@ -8,20 +28,6 @@
       : }
       </div>
       <span class="ajxloader" id="loader9"></span>
-  </div>
-            
-  <div class="col-md-2 bs-sidenav">
-    <ul class="nav">
-    : if ( $user_role > 1 ) {
-        <li><a href="/create"><span class="glyphicon glyphicon-plus"></span> Добавить</a></li>
-    : }
-        <li id="meny-genre-0"><a href="/">Все</a></li>
-    : for $meny -> $elem {
-        <li id="meny-genre-<: $elem.id :>"><a href="/?genre=<: $elem.id :>" onclick="filter_modify( 'genre', <: $elem.id :> ); return false;"><: $elem.title :></a></li>
-    : }
-    </ul>
-  </div>
-            
 </div>
 
 <script>
@@ -37,7 +43,7 @@ var filter_text;
 var filter_year;
 var filter_genre = genre_id;
 var filter_country;
-var filter_serial;
+var filter_type;
 var filter_page = 1;
 var filter_token = generate_token(40);
 var stop_load_by_scroll = 0;
@@ -51,15 +57,28 @@ function filter_modify( type, value ) {
     
     if (type == 'genre') {
         if ( filter_genre == value ) { return; }
-        $("#meny-genre-"+filter_genre).css("background-color","#fff");
         filter_genre = value;
-        $("#meny-genre-"+filter_genre).css("background-color","#eee");
+    }
+    
+    if (type == 'year') {
+        if ( filter_year == value ) { return; }
+        filter_year = value;
+    }
+    
+    if (type == 'country') {
+        if ( filter_country == value ) { return; }
+        filter_country = value;
+    }
+    
+    if (type == 'type') {
+        if ( filter_type == value ) { return; }
+        filter_type = value;
+        $("#filter-type").val(filter_type);
     }
     
     // ищем
     get_search();
 }
-
 
 // функция поиска
 function search() {
@@ -69,7 +88,7 @@ function search() {
     // отправляем
     $.ajax({
         type: 'POST',
-        data: ({ "token" : filter_token, "page" : filter_page, "text" : filter_text, "year" : filter_year, "genre" : filter_genre, "country" : filter_country, "serial" : filter_serial }),
+        data: ({ "token" : filter_token, "page" : filter_page, "text" : filter_text, "year" : filter_year, "genre" : filter_genre, "country" : filter_country, "type" : filter_type }),
         async: true,
         url: '/search',
         success: function (data, textStatus) {
@@ -84,7 +103,7 @@ function search() {
             if ( data.result !== undefined ) {
                 // получили html
                 $("#group-anonce-body").append(data.result);
-                
+
                 // если ничего не получили, значит достигли конца
                 if (data.result == '') {stop_load_by_scroll = 1;}
                 
@@ -113,15 +132,10 @@ $(document).ready(function(){
 
     var param = getHashParams();
     if ( param.text    !== undefined ) { filter_text    = param.text;    need_search = 1; $("#stext").val(param.text); }
-    if ( param.year    !== undefined ) { filter_year    = param.year;    need_search = 1; }
-    if ( param.genre   !== undefined ) {
-        filter_genre = param.genre;
-        need_search = 1;
-        $("#meny-genre-"+genre_id).css("background-color","#fff");
-        $("#meny-genre-"+filter_genre).css("background-color","#eee");
-    }
-    if ( param.country !== undefined ) { filter_country = param.country; need_search = 1; }
-    if ( param.serial  !== undefined ) { filter_serial  = param.serial;  need_search = 1; }
+    if ( param.year    !== undefined ) { filter_year    = param.year;    need_search = 1; $("#filter-year").val(param.year); }
+    if ( param.genre   !== undefined ) { filter_genre   = param.genre;   need_search = 1; $("#filter-genres").val(param.genre); }
+    if ( param.country !== undefined ) { filter_country = param.country; need_search = 1; $("#filter-countries").val(param.country); }
+    if ( param.type    !== undefined ) { filter_type    = param.type;    need_search = 1; $("#filter-type").val(param.type); }
 
     if (need_search) {
         get_search();
@@ -146,10 +160,6 @@ function get_search() {
     search();
 }
 
-
-
-
-
 var loading = false;
 $(window).scroll(function(){
     if (! stop_load_by_scroll) {
@@ -163,17 +173,15 @@ $(window).scroll(function(){
 	      }
 	}
 });
-
-
-
-
-
 </script>
 
-
-
-
-
-
-
-
+<script type="text/javascript">
+$(function() {
+    $(window).scroll(function() {
+        if($(this).scrollTop() != 0) {$('#toTop').fadeIn();} else {$('#toTop').fadeOut();}
+    });
+    $('#toTop').click(function() {
+        $('body,html').animate({scrollTop:0},800);
+    });
+});
+</script>

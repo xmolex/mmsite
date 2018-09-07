@@ -11,6 +11,9 @@
     : if ( $user_role > 1 ) {
         <a href="/edit/<: $id :>"><span class="glyphicon glyphicon-pencil"></span></a>
     : }
+    : if ( $user_id > 0 && $allow_show ) {
+        <a href="" title="Подписаться" onclick="subscribe(<: $id :>); return false"><span class="glyphicon glyphicon-bell <: $bell :>" id="bell"></span></a>
+    : }
 </h2>
 
 : if $title_orig {
@@ -48,7 +51,7 @@
 
 : if $allow_show {
     <h4>
-        <a href="/gfiles/<: $id :>">Смотреть / скачать</a>
+        <a href="/files/<: $id :>">Смотреть / скачать</a>
     </h4>
 : }
 </div>
@@ -61,17 +64,22 @@
     <script type="text/javascript" src="/jwplayer/js/init.js"></script>
     <h3>Трейлеры</h3>
     : for $trailers -> $trailer {
-    <div id="trailer-body-<: $trailer.id:>"></div>
+    <div id="trailer-body-<: $trailer.id:>" class="trailer img-thumbnail" onclick="play_trailer_<: $trailer.id:>();" style="width:<: $trailer.res_x :>px; height:<: $trailer.res_y :>px; background-image: url('<: $trailer.image :>'); line-height: <: $trailer.res_y :>px;">
+      <img src="/img/play.png" class="trailer-play">
+    </div>
     <script type="text/javascript">
-      jwplayer("trailer-body-<: $trailer.id:>").setup({
-          file: '<: $trailer.url :>',
-          image: '<: $trailer.image :>',
-          width: '<: $trailer.res_x :>',
-          height: '<: $trailer.res_y :>'
-      });
-      jwplayer().play(false);
+      function play_trailer_<: $trailer.id:>() {
+          jwplayer("trailer-body-<: $trailer.id:>").setup({
+              file: '<: $trailer.url :>',
+              image: '<: $trailer.image :>',
+              width: '<: $trailer.res_x :>',
+              height: '<: $trailer.res_y :>'
+          });
+          jwplayer().play(false);
+      }
     </script>
     : }
+    <div class="clearfix"></div>
 </div>
 : }
 
@@ -83,12 +91,3 @@
     : }
 </div>
 : }
-
-
-
-
-
-
-
-
-

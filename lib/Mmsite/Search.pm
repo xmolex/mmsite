@@ -1,26 +1,29 @@
+package Mmsite::Search;
 ######################################################################################
 # поиск объектов групп по заданным фильтрам
 ######################################################################################
-package Mmsite::Search;
-################################################################################
 # настройки
-################################################################################
+######################################################################################
 my $SUF_SEARCH = 'search_'; # суффикс ключа memcached для сохраненных результатов поиска
-################################################################################
-
+######################################################################################
 use Dancer2 appname => 'Mmsite';
 use Modern::Perl;
 use utf8;
 use Encode;
 use Mmsite::Lib::Vars;
+use Mmsite::Lib::Subs;
 use Mmsite::Lib::Db;
 use Mmsite::Lib::Mem;
 use Mmsite::Lib::Groups;
+use Mmsite::Lib::Members;
 
 prefix '/search';
 
 # ищем идентификаторы, удовлетворяющие условиям: #название, #год, #жанр, #страна, #многосерийность
 post '' => sub {
+
+    # авторизация
+    my $member_obj = Mmsite::Lib::Members->new();
 
     # получаем токен
     my $token = body_parameters->get('token');
@@ -31,7 +34,7 @@ post '' => sub {
     my $year    = body_parameters->get('year');
     my $genre   = body_parameters->get('genre');
     my $country = body_parameters->get('country');
-    my $serial  = body_parameters->get('serial');
+    my $type    = body_parameters->get('type');
     
     # получаем номер страницы
     my $page = body_parameters->get('page') || 1;
@@ -66,12 +69,12 @@ post '' => sub {
         }
     
         # год
-        if ( defined $year ) {
+        if ( defined $year && $year ) {
             return '{"error" : "wrong year"}' if $year !~ m/^\d{4}$/;
         }
     
         # жанр
-        if ( defined $genre ) {
+        if ( defined $genre && $genre ) {
             my $is = 0;
             foreach (keys %LIST_GENRES) {
                 if ($_ == $genre) {
@@ -85,7 +88,7 @@ post '' => sub {
         }
     
         # страна
-        if ( defined $country ) {
+        if ( defined $country && $country ) {
             my $is = 0;
             foreach (keys %LIST_COUNTRIES) {
                 if ($_ == $country) {
@@ -97,31 +100,35 @@ post '' => sub {
             return '{"error" : "wrong country"}' unless $is;
         }
     
-        # многосерийность не проверяем, т.к. проверка будет позднее в условиях
-        # -1:фильм, 0:фильтра нет, 1:сериал
+        # тип не проверяем, т.к. проверка будет позднее в условиях
+        # -1:фильм, 0:фильтра нет, 1:сериал, 2:подписки
     
         # собираем запрос
         my $sql = 'SELECT group_id FROM groups_list';
     
-        if ( $text || $year || $genre || $country || $serial ) {$sql .= " WHERE";}
+        if ( $text || $year || $genre || $country || $type ) {$sql .= " WHERE";}
 
     
         if ($text) {
             $sql .= " group_id IN (SELECT id FROM groups_data WHERE ( title ILIKE '%$text%' OR title_orig ILIKE '%$text%' ))";
-            if ( $year || $genre || $country || $serial ) {$sql .= " AND";}
+            if ( $year || $genre || $country || $type ) {$sql .= " AND";}
         }
 
         if ($year) {
             $sql .= " group_id IN (SELECT id FROM groups_data WHERE year='$year')";
-            if ( $genre || $country || $serial ) {$sql .= " AND";}
+            if ( $genre || $country || $type ) {$sql .= " AND";}
         }
 
-        if ($serial) {
-            if ($serial eq '-1') {
-                $sql .= " group_id IN (SELECT id FROM groups_data WHERE AND is_serial=FALSE)";
+        if ($type) {
+            if ($type eq '2') {
+                # вывести подписки
+                $sql .= " group_id IN (SELECT group_id FROM member_subscribes WHERE member_id='" . $member_obj->id . "')";
+            }
+            elsif ($type eq '-1') {
+                $sql .= " group_id IN (SELECT id FROM groups_data WHERE is_serial=FALSE)";
             }
             else {
-                $sql .= " group_id IN (SELECT id FROM groups_data WHERE AND is_serial=TRUE)";
+                $sql .= " group_id IN (SELECT id FROM groups_data WHERE is_serial=TRUE)";
             }
             if ( $genre || $country ) {$sql .= " AND";}
         }
@@ -149,7 +156,7 @@ post '' => sub {
     # на текущий момент у нас должнен быть массив из идентификаторов объектов группы
     
     # проверяем, а есть ли что выводить
-    return '{"result" : "ничего не найдено"}' if ( scalar(@result) == 0 );
+    return '{"result" : "Ничего не нашлось"}' if ( scalar(@result) == 0 );
     
     # в $COUNT_OBJECT_ANONCE у нас количество которое нужно вывести на одной странице
     # если оно превышает общее количество элементов, то нужно его уменьшить
@@ -165,13 +172,24 @@ post '' => sub {
     # проходимся по этому массиву и собираем превьюшки всех объектов группы
     my $all_html_result = '';
     
-    for my $i ( $offset .. $offset + $count_objects ) {
+    for my $i ( $offset .. $offset + $count_objects - 1 ) {
     
         next unless defined $result[$i]; # если ничего нет, то проверяем слудующий элемент
     
         # получаем код анонса объекта группы
-        my $obj_group = Mmsite::Lib::Groups->new($result[$i]);
-        $all_html_result .= $obj_group->preview() if $obj_group;
+        my $obj_group = Mmsite::Lib::Groups->new($result[$i]); 
+        if ($obj_group) {
+            my $tmp = $obj_group->preview();
+            
+            # проверка на подписку и непросмотренные файлы
+            if ( $member_obj->is_subscribe($obj_group->id) ) {
+                if ( $member_obj->is_view_unlooked($obj_group->id) ) {
+                    $tmp =~ s/"gf-anc-one"/"gf-anc-one-unlooked"/s;
+                }
+            }
+
+            $all_html_result .= $tmp;
+        }
     }
     
     # формируем json

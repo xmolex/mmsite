@@ -36,21 +36,33 @@ padding: 0;
   background-position: -400px 0px;
 }
 
-
-
-
-
-
-
-
+#toTop {
+  width:100px;
+  border:1px solid #ccc;
+  background:#f7f7f7;
+  text-align:center;
+  padding:5px;
+  position:fixed;
+  top:10px;
+  left:10px;
+  cursor:pointer;
+  display:none;
+  color:#333;
+  font-family:verdana;
+  font-size:11px;
+  z-index:999;
+}
 
 /* preview */
-.gf-anc-one {overflow-y: hidden; display: inline-block; margin: 10px; padding:10px; text-align: center; max-height: 300px; max-width: 200px; vertical-align: top; border-radius: 3px; box-shadow: 0px 0px 0px rgba(0,0,0,.1); cursor: pointer;}
-.gf-anc-one:hover {border-radius: 3px; box-shadow: 0px 5px 8px rgba(0,0,0,.1);}
+.gf-anc-one, .gf-anc-one-unlooked {overflow-y: hidden; display: inline-block; margin: 10px; padding:10px; text-align: center; max-height: 300px; max-width: 200px; vertical-align: top; border-radius: 3px; cursor: pointer;}
+.gf-anc-one {box-shadow: 0px 0px 0px rgba(0,0,0,.1);}
+.gf-anc-one:hover {box-shadow: 0px 5px 8px rgba(0,0,0,.1);}
+.gf-anc-one-unlooked {box-shadow: 0px 5px 14px #337ab7;}
+.gf-anc-one-unlooked:hover {box-shadow: 1px 2px 8px #337ab7;}
 .gf-anc-one-img {display:inline-block; vertical-align: top; position: relative;}
 .gf-anc-one-img img {width: 120px;}
 .gf-anc-one-img .serial {position: absolute; top: 10px; left: 10px; width: 20px; height: 40px; background-image: url(/img/serial.png); background-repeat: no-repeat;}
-.gf-anc-one-inb {display:inline-block; vertical-align: top; margin-top: 10px;}
+.gf-anc-one-inb {display:inline-block; vertical-align: top; margin-top: 10px; width: 180px;}
 
 
 /* group-detail */
@@ -66,3 +78,14 @@ padding: 0;
 
 /* loader */
 .ajxloader {display: none; width: 16px; height: 16px; background-image: url(/img/loader.gif); background-repeat: no-repeat;}
+
+/* bell */
+.bell-noactive {color: rgb(153, 153, 153);}
+.bell-active {color: #337ab7;}
+
+/* view */
+.manage-file-view a {display: inline-block; margin-left: 5px;}
+
+/* trailers */
+.trailer {cursor: pointer; background-size: cover; text-align: center; display: inline-block; vertical-align: top;}
+.trailer-play {vertical-align: middle; width: 50px; height: 50px;}

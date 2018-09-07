@@ -1,13 +1,14 @@
+package Mmsite::Upload;
 ######################################################################################
 # модуль сохранения файла в пользовательской директории
 ######################################################################################
-package Mmsite::Upload;
 use Dancer2 appname => 'Mmsite';
 use Modern::Perl;
 use utf8;
 use File::Copy;
 use Mmsite::Lib::Vars;
-use Mmsite::Lib::Auth;
+use Mmsite::Lib::Subs;
+use Mmsite::Lib::Members;
 
 prefix '/upload';
 
@@ -16,11 +17,11 @@ post '' => sub {
     # отдаем результат в json
     response_header 'Content-Type' => 'application/json; charset=utf-8'; 
 
-    my ($user_id, $user_name, $user_role, $user_sys, $users_sys_id ) = Auth();
-    return '{"error":"access denied"}' if $user_role < 2;
+    my $member_obj = Mmsite::Lib::Members->new();
+    return '{"error":"access denied"}' if $member_obj->role < 2;
     
     # пользовательская директория
-    my $path_user = $PATH_USERS . '/' . $user_id . '/';
+    my $path_user = $PATH_USERS . '/' . $member_obj->id . '/';
     
     # проверяем, существует ли пользовательская директория
     unless (-d $path_user) {

@@ -1,21 +1,21 @@
 package Mmsite;
 use Dancer2;
-
 use Modern::Perl;
 use Digest::MurmurHash qw(murmur_hash);
-
 use Mmsite::Lib::Vars;
+use Mmsite::Lib::Subs;
 use Mmsite::Lib::Db;
-use Mmsite::Lib::Auth;
+use Mmsite::Lib::Members;
 use Mmsite::Lib::Groups;
 use Mmsite::Lib::Ffmpeg;
 use Mmsite::Lib::Files;
 use Mmsite::Lib::Kinopoisk;
-
+use Mmsite::Lib::Mem;
 use Mmsite::Auth_vk;
+use Mmsite::Auth_pface;
 use Mmsite::Exit;
 use Mmsite::Groups;
-use Mmsite::Gfiles;
+use Mmsite::Files;
 use Mmsite::Create;
 use Mmsite::Upload;
 use Mmsite::Edit;
@@ -23,34 +23,87 @@ use Mmsite::Token;
 use Mmsite::Count;
 use Mmsite::Search;
 
-
 prefix undef;
 
-our $VERSION = '0.1';
+our $VERSION = '0.2';
 
 hook before => sub {
     # возвращаем куки в $ENV, для авторизации
     $ENV{'HTTP_COOKIE'} = request_header('Cookie');
+    $ENV{'REMOTE_ADDR'} = request_header('X-Real-IP');
 };
-
 
 hook before_layout_render => sub {
     my ($tokens, $ref_content) = @_;
     
     # авторизация
-    my ($user_id, $user_name, $user_role, $user_sys, $users_sys_id ) = Auth();
-    $tokens->{user_id}              = $user_id;
-    $tokens->{user_name}            = $user_name;
-    $tokens->{user_role}            = $user_role;
-    $tokens->{user_sys}             = $user_sys;
-    $tokens->{users_sys_id}         = $users_sys_id;
+    my $member_obj = Mmsite::Lib::Members->new();
+    $tokens->{user_id}              = $member_obj->id;
+    $tokens->{user_name}            = $member_obj->name;
+    $tokens->{user_role}            = $member_obj->role;
+    $tokens->{user_sys}             = $member_obj->auth_sys;
+    $tokens->{users_sys_id}         = $member_obj->auth_sys_id;
     $tokens->{from}                 = request->path;
 
     # прочие переменные
     $tokens->{site_name} = $SITE_NAME;
 };
 
+# попытка указать, что пользователь просмотрел этот файл в плеере
+post '/view' => sub {
+    my $file_id = body_parameters->get('file_id') || return;
+    return if $file_id !~ /^\d+$/;
 
+    my $member_obj = Mmsite::Lib::Members->new();
+    return unless $member_obj->id;
+    
+    return if $member_obj->is_subscribe($file_id);
+    
+    return $member_obj->view_create($file_id);
+};
+
+# пометить все файлы / снять пометку всех файлов в объекте группы как просмотренные
+post '/viewall' => sub {
+    my $group_id = body_parameters->get('group_id') || return;
+    return '{"error":"id not found"}' if $group_id !~ /^-?\d+$/;
+
+    my $member_obj = Mmsite::Lib::Members->new();
+    return '{"error":"user no auth"}' unless $member_obj->id;
+    
+    my @result;
+    
+    if ($group_id < 0) {
+        # снимаем пометки
+        $group_id *= -1;
+        @result = $member_obj->view_delete_all_from_group($group_id);
+    }
+    else {
+        # устанавливаем пометки
+        @result = $member_obj->view_create_all_from_group($group_id);
+    }
+    
+    return to_json \@result;
+};
+
+# подписываем пользователя на объект группы, или удаляем подписку, если уже подписан
+# возвращаем 0,1 или ''
+post '/subscribe' => sub {
+    my $group_id = body_parameters->get('group_id') || return;
+    return if $group_id !~ /^\d+$/;
+
+    my $member_obj = Mmsite::Lib::Members->new();
+    return unless $member_obj->id;
+    
+    if ( $member_obj->is_subscribe($group_id) ) {
+        # подписан, удаляем подписку
+        return unless $member_obj->subscribe_delete($group_id);
+        return "0";
+    }
+    else {
+        # подписываем
+        return $member_obj->subscribe_create($group_id);
+    }
+};
 
 # получаем данные от kinopoisk.ru и отдаем их в json
 post '/kinopoisk' => sub {
@@ -62,6 +115,13 @@ post '/kinopoisk' => sub {
     # проверка на id
     unless ($id) {
         $result{'error'} = 'не указан идентификатор фильма';
+        return to_json \%result;
+    }
+    
+    # проверка на авторизацию
+    my $member_obj = Mmsite::Lib::Members->new();
+    if ($member_obj->role < 2) {
+        $result{'error'} = 'доступ запрещен';
         return to_json \%result;
     }
 
@@ -122,27 +182,10 @@ post '/kinopoisk' => sub {
     }
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# отдаем json с информацией об объектах группы в зависимости от условий
+# формируем индексную страницу
 get '/' => sub {
     # авторизация
-    my ( $user_id, $user_name, $user_role, $user_sys, $users_sys_id ) = Auth();
+    my $member_obj = Mmsite::Lib::Members->new();
 
     # получаем страницу и расчитываем смещение
     my $page = query_parameters->get('page') || 1;
@@ -185,17 +228,60 @@ get '/' => sub {
         foreach (@$sql) {
             my $group = Mmsite::Lib::Groups->new($_);
             if ($group) {
-                push @html_anonces, $group->preview();
+                my $tmp = $group->preview();
+                
+                # проверка на подписку и непросмотренные файлы
+                if ( $member_obj->is_subscribe($group->id) ) {
+                    if ( $member_obj->is_view_unlooked($group->id) ) {
+                        $tmp =~ s/"gf-anc-one"/"gf-anc-one-unlooked"/s;
+                    }
+                }
+                
+                push @html_anonces, $tmp;
                 $anonces = 1;   
             }
         }
     }
    
-    # меню
-    my $meny;
-    for my $key ( sort { $LIST_GENRES{$a} cmp $LIST_GENRES{$b} } keys %LIST_GENRES ) {
-        # заполняем хэш
-        push @$meny, { 'id' => $key, 'title' => $LIST_GENRES{$key} };
+    # жарны
+    my $meny = mem_get()->get('templ_select_meny');
+    if (! $meny) {
+        # нужно сформировать
+        for my $key ( sort { $LIST_GENRES{$a} cmp $LIST_GENRES{$b} } keys %LIST_GENRES ) {
+            my $tmp = $HTML_TEMPLATE_SELECT;
+            $tmp =~ s/%ID%/$key/;
+            $tmp =~ s/%TITLE%/$LIST_GENRES{$key}/;
+            $meny .= $tmp;
+        }
+        mem_get()->add( 'templ_select_meny', $meny );
+    }
+
+    # страны
+    my $countries = mem_get()->get('templ_select_countries');
+    if (! $countries) {
+        # нужно сформировать
+        for my $key ( sort { $LIST_COUNTRIES{$a} cmp $LIST_COUNTRIES{$b} } keys %LIST_COUNTRIES ) {
+            my $tmp = $HTML_TEMPLATE_SELECT;
+            $tmp =~ s/%ID%/$key/;
+            $tmp =~ s/%TITLE%/$LIST_COUNTRIES{$key}/;
+            $countries .= $tmp;
+        }
+        mem_get()->add( 'templ_select_countries', $countries );
+    }
+    
+    # года
+    my $years = mem_get()->get('templ_select_years');
+    if (! $years) {
+        # нужно сформировать
+        my( $sec, $min, $hour, $mday, $mon, $year_now ) = localtime();
+        $year_now = $year_now + 1900;
+        for ( reverse ( 1900..$year_now ) ) {
+            my $tmp = $HTML_TEMPLATE_SELECT;
+            $tmp =~ s/%ID%/$_/;
+            $tmp =~ s/%TITLE%/$_/;
+            $years .= $tmp;
+        }
+        mem_get()->add( 'templ_select_years', $years );
     }
     
     # выводим шаблон
@@ -204,8 +290,10 @@ get '/' => sub {
                             'anonces'      => $anonces,
                             'meny'         => $meny,
                             'genre'        => $genre,
-                            'user_role'    => $user_role
-    
+                            'user_role'    => $member_obj->role,
+                            'years'        => $years,
+                            'countries'    => $countries,
+                            'title'        => 'Главная',
     };
 
 };
@@ -213,8 +301,8 @@ get '/' => sub {
 
 get '/get-file-conv-setting' => sub {
     # авторизация
-    my ( $user_id, $user_name, $user_role, $user_sys, $users_sys_id ) = Auth();
-    return '{"error":"access denied"}' if $user_role < 2;
+    my $member_obj = Mmsite::Lib::Members->new();
+    return '{"error":"access denied"}' if $member_obj->role < 2;
 
     # удаление файла в пользовательской директории
     my $file_id = query_parameters->get('file_id');
@@ -301,8 +389,8 @@ get '/get-file-conv-setting' => sub {
 
 post '/get-file-conv-setting' => sub {
     # авторизация
-    my ( $user_id, $user_name, $user_role, $user_sys, $users_sys_id ) = Auth();  
-    return '{"error":"access denied"}' if $user_role < 2;
+    my $member_obj = Mmsite::Lib::Members->new();
+    return '{"error":"access denied"}' if $member_obj->role < 2;
     
     my $json = body_parameters->get('json');
     return '{"error":"пустой запрос"}' unless $json;
@@ -347,8 +435,8 @@ post '/get-file-conv-setting' => sub {
 post '/create-shots' => sub {
     # автоматическое создание кадров с использованием системного скрипта
     # авторизация
-    my ( $user_id, $user_name, $user_role, $user_sys, $users_sys_id ) = Auth();
-    return '{"error":"access denied"}' if $user_role < 2;
+    my $member_obj = Mmsite::Lib::Members->new();
+    return '{"error":"access denied"}' if $member_obj->role < 2;
     
     # получаем идентификатор объекта группы
     my $group_id = body_parameters->get('group_id');
@@ -367,14 +455,14 @@ post '/create-shots' => sub {
 post '/get-user-files' => sub {
     # удаление файла в пользовательской директории
     # авторизация
-    my ( $user_id, $user_name, $user_role, $user_sys, $users_sys_id ) = Auth();  
-    return '{"error":"access denied"}' if $user_role < 2;
+    my $member_obj = Mmsite::Lib::Members->new();
+    return '{"error":"access denied"}' if $member_obj->role < 2;
     
     my $file = body_parameters->get('file');
     return '{"error":"file not found"}' unless $file;
 
     # пользовательская директория
-    my $path_user = $PATH_USERS . '/' . $user_id . '/';
+    my $path_user = $PATH_USERS . '/' . $member_obj->id . '/';
     
     # убираем из имени файла запрещенные символы
     $file =~ s!/\?\*\\!!g;
@@ -390,11 +478,11 @@ post '/get-user-files' => sub {
 
 get '/get-user-files' => sub {
     # авторизация
-    my ( $user_id, $user_name, $user_role, $user_sys, $users_sys_id ) = Auth();  
-    return '{"error":"access denied"}' if $user_role < 2;
+    my $member_obj = Mmsite::Lib::Members->new();
+    return '{"error":"access denied"}' if $member_obj->role < 2;
     
     # пользовательская директория
-    my $path_user = $PATH_USERS . '/' . $user_id . '/';
+    my $path_user = $PATH_USERS . '/' . $member_obj->id . '/';
     
     # открываем и отдаем данные по пользовательским файлам
     opendir my ($tempdir), $path_user;
@@ -433,7 +521,7 @@ get '/get-user-files' => sub {
                          'name' => $file,
                          'size' => $size,
                          'type' => $type,
-                         'url'  => $URL_USERS_DATA . $user_id . '/' . $file
+                         'url'  => $URL_USERS_DATA . $member_obj->id . '/' . $file
         );
         
         push @result, \%data;
@@ -442,6 +530,5 @@ get '/get-user-files' => sub {
     $result{'result'} = \@result;
     return to_json \%result;
 };
-
 
 1;

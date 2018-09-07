@@ -1,7 +1,7 @@
+package Mmsite::Exit;
 ######################################################################################
 # механизм сброса сессии пользователя
 ######################################################################################
-package Mmsite::Exit;
 use Dancer2 appname => 'Mmsite';
 use Modern::Perl;
 use utf8;
@@ -14,6 +14,8 @@ get '' => sub {
     # чистим куки от сессии
     cookie $AUTH_COOKIE_VK_ID   => 0, expires => "-1 hours";
     cookie $AUTH_COOKIE_VK_SESS => 0, expires => "-1 hours";
+    cookie $AUTH_COOKIE_PFACE_1 => 0, expires => "-1 hours";
+    cookie $AUTH_COOKIE_PFACE_2 => 0, expires => "-1 hours";
 
     # переходим на исходную страницу
     my $redir = query_parameters->get('from') || '/';

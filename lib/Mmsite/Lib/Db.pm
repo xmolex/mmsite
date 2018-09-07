@@ -1,15 +1,14 @@
+package Mmsite::Lib::Db;
 ################################################################################
 # Модуль работы с базой данных
 ################################################################################
-package Mmsite::Lib::Db;
-
 use Modern::Perl;
 use utf8;
 use DBI;
 use Mmsite::Lib::Vars;
+use Mmsite::Lib::Subs;
 use Exporter 'import';
-our @EXPORT = qw(&sql);
-
+our @EXPORT = qw(sql);
 my $conn;
 
 # подключаемся к базе
@@ -38,7 +37,7 @@ sub sql {
     # если не подключены, то пробуем подключиться
     if (!$conn) {
         if ( ! _toconnect() ) {
-            _to_log("Don't connect database server");
+            to_log( $PATH_LOG_DB, 'DB', "Don't connect database server");
             $conn = 0;
             return \@result;
         }
@@ -51,7 +50,7 @@ sub sql {
             my $err_msg = $conn->errstr();
             on_utf8(\$err_msg);
             my ( $package, $filename, $line ) = caller;
-            _to_log("$package:$line | $err_msg: '$command'");
+            to_log( $PATH_LOG_DB, 'DB', "$package:$line | $err_msg: '$command'");
             return;
         } else {
             # выполнить удалось
@@ -74,17 +73,9 @@ sub sql {
             my $err_msg = $conn->errstr();
             on_utf8(\$err_msg);
             my ( $package, $filename, $line ) = caller;
-            _to_log("$package:$line | $err_msg: '$command'");
+            to_log( $PATH_LOG_DB, 'DB', "$package:$line | $err_msg: '$command'" );
         }
     }
     return \@result;
-}
-
-sub _to_log {
-    my ($str) = @_;
-    open my $fn, '>>:utf8', $PATH_LOG_DB;
-    return unless $fn;
-    say $fn "| " . get_sql_time() . " | " . $str;
-    close $fn;
 }
 1;

@@ -1,13 +1,13 @@
+package Mmsite::Edit;
 ######################################################################################
 # модуль редактирования объекта группы
 ######################################################################################
-package Mmsite::Edit;
 use Dancer2 appname => 'Mmsite';
 use Modern::Perl;
 use utf8;
 use Encode;
 use Mmsite::Lib::Vars;
-use Mmsite::Lib::Auth;
+use Mmsite::Lib::Members;
 use Mmsite::Lib::Db;
 use Mmsite::Lib::Groups;
 use Mmsite::Lib::Images;
@@ -19,9 +19,8 @@ prefix '/edit';
 # форма редактирования объекта группы с файлами
 get '/:group_id' => sub {
     # авторизация
-    my ( $user_id, $user_name, $user_role, $user_sys, $users_sys_id ) = Auth();  
-    redirect '/' if $user_role < 2;
-
+    my $member_obj = Mmsite::Lib::Members->new();
+    redirect '/' if $member_obj->role < 2;
 
     # получаем идентификатор объекта группы
     my $group_id = route_parameters->get('group_id');
@@ -177,15 +176,16 @@ get '/:group_id' => sub {
                                      'allow_ages'      => $allow_ages,
                                      'years'           => $years,
                                      'data_json'       => $data_json,
-                                     'id'              => $group_id
+                                     'id'              => $group_id,
+                                     'title'           => 'Редактирование',
                                };
 };
 
 # добавляем новый объект группы
 post '' => sub {
     # авторизация
-    my ( $user_id, $user_name, $user_role, $user_sys, $users_sys_id ) = Auth(); 
-    return '{"error": "access denied"}' if $user_role < 2;
+    my $member_obj = Mmsite::Lib::Members->new();
+    return '{"error": "access denied"}' if $member_obj->role < 2;
 
     my $json = body_parameters->get('json');
     return '{"error":"empty request"}' unless $json;
@@ -331,7 +331,7 @@ post '' => sub {
             return '{"error": "не удалось создать объект токена"}' unless $obj_token;
             
             # получаем список файлов в пользовательской директории
-            my $path_user = $PATH_USERS . '/' . $user_id . '/';
+            my $path_user = $PATH_USERS . '/' . $member_obj->id . '/';
             opendir my ($tempdir), $path_user;
             my @file = readdir $tempdir;
             closedir $tempdir;  
@@ -358,7 +358,7 @@ post '' => sub {
                                   source_name => $$obj{'file'},
                                   source_path => $path_user . $$obj{'file'},
                                   parent_id   => $obj_group->id,
-                                  owner_id    => $user_id
+                                  owner_id    => $member_obj->id
                    );
                    
                    if ($$obj{'type'} eq 'posters') {

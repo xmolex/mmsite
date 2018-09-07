@@ -1,14 +1,12 @@
-#################################################################
-#  Управление файлами
-#################################################################
 package Mmsite::Lib::Files;
-
+################################################################################
+#  Управление файлами
 ################################################################################
 # настройки
 ################################################################################
-my $MEM_SUF_FILES_DATA = 'file_data_'; # memcached: суффикс ключа данных файла
+my $MEM_SUF_FILES_DATA         = 'file_data_'; # memcached: суффикс ключа данных файла
+my $MEM_SUF_FILES_DATA_VERSION = 'file_data_version_'; # memcached: суффикс ключа данных версии файла
 ################################################################################
-
 use Modern::Perl;
 use utf8;
 use JSON::XS;
@@ -16,9 +14,11 @@ use File::Copy;
 use Digest::MurmurHash qw(murmur_hash);
 use Data::Structure::Util qw( unbless );
 use Mmsite::Lib::Vars;
+use Mmsite::Lib::Subs;
 use Mmsite::Lib::Db;
 use Mmsite::Lib::Mem;
 use Mmsite::Lib::Ffmpeg;
+use Mmsite::Lib::Members::View;
 
 # инициализируем объект json
 my $json_xs = JSON::XS->new();
@@ -145,6 +145,9 @@ sub create {
         }
     }
     
+    # сбрасываем кеш непросмотренных файлов для объекта группы
+    Mmsite::Lib::Members::View::view_clear_all_cache_data_for_group($$self{'parent_id'});
+    
     # возвращаем объект       
     $OBJECT{ $$self{'id'} } = bless $self, $class;
     return $OBJECT{ $$self{'id'} };
@@ -154,20 +157,32 @@ sub create {
 sub get {
     my ($self) = @_;
     
-    # пытаемся взять данные из кеша
-    my $json_decode;
-    my $key = $MEM_SUF_FILES_DATA . $self->{'id'};
-    my $memcached = mem_get()->get($key);
-    if ($memcached) {
-        # данные есть, распарсиваем
-        on_utf8(\$memcached);
-        if (eval { $json_decode = $json_xs->decode($memcached); }) {
-            # удалось распарсить, заносим данные в свойства объекта
-            while ( my( $key, $val ) = each(%$json_decode) ) {
-                $self->{$key} = $val;
+    # проверяем версию данных в кеше
+    my $version_key = $MEM_SUF_FILES_DATA_VERSION . $self->{'id'};
+    my $version_val = mem_get()->get($version_key);
+    if ( $version_val && $version_val == $self->{'data_version'} ) {
+        # актуальные данные уже в памяти
+        return 1;
+    }
+    else {
+        # пытаемся взять данные из кеша
+        my $json_decode;
+        my $key = $MEM_SUF_FILES_DATA . $self->{'id'};
+        my $memcached = mem_get()->get($key);
+        if ($memcached) {
+            # данные есть, распарсиваем
+            on_utf8(\$memcached);
+            if (eval { $json_decode = $json_xs->decode($memcached); }) {
+                # удалось распарсить, заносим данные в свойства объекта
+                while ( my( $key, $val ) = each(%$json_decode) ) {
+                    $self->{$key} = $val;
+                }
+                
+                # помечаем, что данные у нас определенной версии
+                $self->{'data_version'} = $version_val;
+                
+                return 1;
             }
-            
-            return 1;
         }
     }
     
@@ -207,10 +222,14 @@ sub get {
     }
 
     # заносим данные в хэш
-    $memcached = $json_xs->encode(\%hash);
+    my $key = $MEM_SUF_FILES_DATA . $self->{'id'};
+    my $memcached = $json_xs->encode(\%hash);
     mem_get()->delete($key);
     mem_get()->add( $key, $memcached );
-
+    # устанавливаем текущую версию
+    mem_get()->incr($version_key);
+    $self->{'data_version'} = mem_get()->get($version_key);
+    
     return 1;    
 }
 
@@ -257,6 +276,12 @@ sub delete {
     
     # получаем информацию об объекте
     $self->get();
+    
+    # удаляем информацию о просмотренных файлах у всех пользователей
+    Mmsite::Lib::Members::View::view_delete_force($self->{'id'});
+    
+    # сбрасываем кеш непросмотренных файлов для объекта группы
+    Mmsite::Lib::Members::View::view_clear_all_cache_data_for_group($self->{'parent_id'});
 
     # удаляем инфо из базы
     if ( sql( "DELETE FROM files WHERE id='$self->{'id'}';", 1 ) ) {
@@ -276,6 +301,7 @@ sub delete {
         
         # чистим кеш
         $self->clear_cache_data();
+        $self->clear_cache_data_version();
         
         # если был указан родитель, то сбрасываем ему кеш
         if ( $self->{'file_id'} ) {
@@ -589,6 +615,14 @@ sub clear_cache_data {
     mem_get()->delete($key);
     return;
 }
+
+sub clear_cache_data_version {
+    my ( $self ) = @_;
+    my $key = $MEM_SUF_FILES_DATA_VERSION . $self->{'id'};
+    mem_get()->delete($key);
+    return;
+}
+
 
 
 # аксессоры
